@@ -1,23 +1,44 @@
-import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
 
 /**
- * Cookie-free public client for reading public storefront data (respects RLS).
+ * Stateless public PostgREST fetch for `"use cache"` storefront reads (respects RLS).
+ * Avoids GoTrueClient's module-scoped session locks inside Next.js 16 Cache Components.
  */
-export function createSupabasePublicClient() {
+export async function fetchSupabasePublicRest<T>(
+  pathAndQuery: string,
+): Promise<T | null> {
   const env = getSupabasePublicEnv();
   if (!env) {
     return null;
   }
 
-  return createClient(env.url, env.anonKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  });
+  const baseUrl = env.url.replace(/\/$/, "");
+  const headers: Record<string, string> = {
+    apikey: env.anonKey,
+    Accept: "application/json",
+  };
+
+  // New Supabase publishable keys (sb_publishable_...) are not JWTs and belong only in `apikey`.
+  if (!env.anonKey.startsWith("sb_publishable_")) {
+    headers.Authorization = `Bearer ${env.anonKey}`;
+  }
+
+  try {
+    const response = await fetch(`${baseUrl}/rest/v1/${pathAndQuery}`, {
+      method: "GET",
+      headers,
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return (await response.json()) as T;
+  } catch {
+    return null;
+  }
 }
 
 /**

@@ -2,7 +2,8 @@ import { cacheLife, cacheTag } from "next/cache";
 import type { Achado, SiteSettings } from "@/types/achado";
 import { MOCK_ACHADOS, MOCK_SITE_SETTINGS } from "@/lib/data/mock-data";
 import { SITE_CONFIG, UI_COPY } from "@/lib/config";
-import { createSupabasePublicClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { fetchSupabasePublicRest } from "@/lib/supabase/server";
 
 export const ACHADOS_CACHE_TAG = "achados";
 export const SITE_SETTINGS_CACHE_TAG = "site-settings";
@@ -16,27 +17,18 @@ export async function getPublishedAchados(): Promise<Achado[]> {
   cacheTag(ACHADOS_CACHE_TAG);
   cacheLife("minutes");
 
-  const supabase = createSupabasePublicClient();
-  if (!supabase) {
+  if (!isSupabaseConfigured()) {
     return MOCK_ACHADOS.filter((item) => item.status === "published").sort(
       (a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     );
   }
 
-  const { data, error } = await supabase
-    .from("achados")
-    .select(
-      "id, title, description, price_cents, original_price_cents, store, affiliate_url, image_path, status, created_at, updated_at, expires_at",
-    )
-    .eq("status", "published")
-    .order("created_at", { ascending: false });
+  const data = await fetchSupabasePublicRest<Achado[]>(
+    "achados?select=id,title,description,price_cents,original_price_cents,store,affiliate_url,image_path,status,created_at,updated_at,expires_at&status=eq.published&order=created_at.desc",
+  );
 
-  if (error || !data) {
-    return [];
-  }
-
-  return data as Achado[];
+  return Array.isArray(data) ? data : [];
 }
 
 /**
@@ -47,18 +39,17 @@ export async function getSiteSettings(): Promise<SiteSettings> {
   cacheTag(SITE_SETTINGS_CACHE_TAG);
   cacheLife("minutes");
 
-  const supabase = createSupabasePublicClient();
-  if (!supabase) {
+  if (!isSupabaseConfigured()) {
     return MOCK_SITE_SETTINGS;
   }
 
-  const { data, error } = await supabase
-    .from("site_settings")
-    .select("whatsapp_group_url, modal_enabled, modal_title, modal_message")
-    .eq("id", 1)
-    .maybeSingle();
+  const rows = await fetchSupabasePublicRest<SiteSettings[]>(
+    "site_settings?select=whatsapp_group_url,modal_enabled,modal_title,modal_message&id=eq.1&limit=1",
+  );
 
-  if (error || !data) {
+  const data = Array.isArray(rows) ? rows[0] : undefined;
+
+  if (!data) {
     return {
       whatsapp_group_url: SITE_CONFIG.defaultWhatsappGroupUrl,
       modal_enabled: true,
