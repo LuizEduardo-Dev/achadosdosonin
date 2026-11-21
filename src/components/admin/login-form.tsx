@@ -59,6 +59,7 @@ export function LoginForm({ supabaseConfigured }: LoginFormProps) {
           type="email"
           autoComplete="email"
           required
+          defaultValue={state.values?.email ?? ""}
           placeholder="seu-email@exemplo.com"
           aria-invalid={Boolean(state.fieldErrors?.email)}
         />

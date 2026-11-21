@@ -22,6 +22,7 @@ export interface ActionState {
   error?: string;
   success?: string;
   fieldErrors?: Record<string, string>;
+  values?: Record<string, string>;
 }
 
 function revalidateStorefrontAndAdmin() {
@@ -88,8 +89,9 @@ export async function loginAction(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const emailRaw = String(formData.get("email") ?? "").trim();
   const parsed = loginSchema.safeParse({
-    email: String(formData.get("email") ?? ""),
+    email: emailRaw,
     password: String(formData.get("password") ?? ""),
   });
 
@@ -97,6 +99,7 @@ export async function loginAction(
     return {
       error: "Verifique os dados informados.",
       fieldErrors: extractFieldErrors(parsed.error.issues),
+      values: { email: emailRaw },
     };
   }
 
@@ -105,6 +108,7 @@ export async function loginAction(
     return {
       error:
         "Supabase ainda não está configurado. Preencha as variáveis em .env.local.",
+      values: { email: emailRaw },
     };
   }
 
@@ -114,12 +118,63 @@ export async function loginAction(
   });
 
   if (error || !data.user) {
-    return { error: "E-mail ou senha inválidos." };
+    console.error("[admin login] Supabase auth error:", {
+      status: error?.status,
+      code: error?.code,
+      message: error?.message,
+    });
+
+    const msg = error?.message?.toLowerCase() ?? "";
+    const code = error?.code?.toLowerCase() ?? "";
+
+    if (
+      msg.includes("fetch failed") ||
+      msg.includes("enotfound") ||
+      msg.includes("timeout") ||
+      error?.status === 0
+    ) {
+      return {
+        error:
+          "Não foi possível conectar ao Supabase. Verifique NEXT_PUBLIC_SUPABASE_URL no .env.local e sua conexão.",
+        values: { email: emailRaw },
+      };
+    }
+
+    if (msg.includes("api key") || msg.includes("apikey")) {
+      return {
+        error:
+          "Chave da API do Supabase inválida. Verifique NEXT_PUBLIC_SUPABASE_ANON_KEY no .env.local.",
+        values: { email: emailRaw },
+      };
+    }
+
+    if (code === "email_not_confirmed") {
+      return {
+        error: "Este e-mail ainda não foi confirmado no Supabase Auth.",
+        values: { email: emailRaw },
+      };
+    }
+
+    if (code === "email_provider_disabled") {
+      return {
+        error:
+          "O login por e-mail está desativado no Supabase (mantenha Email ativado e desative apenas 'Allow new users to sign up').",
+        values: { email: emailRaw },
+      };
+    }
+
+    return {
+      error: "E-mail ou senha inválidos.",
+      values: { email: emailRaw },
+    };
   }
 
   if (!isAdminUser(data.user)) {
     await supabase.auth.signOut();
-    return { error: "Esta conta não tem permissão de administrador." };
+    return {
+      error: "Esta conta não tem permissão de administrador.",
+      values: { email: emailRaw },
+    };
   }
 
   redirect("/admin");

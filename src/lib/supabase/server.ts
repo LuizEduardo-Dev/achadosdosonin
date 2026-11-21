@@ -32,11 +32,21 @@ export async function fetchSupabasePublicRest<T>(
     });
 
     if (!response.ok) {
+      if (process.env.NODE_ENV === "development") {
+        console.error(
+          "[supabase-rest] request failed:",
+          response.status,
+          pathAndQuery,
+        );
+      }
       return null;
     }
 
     return (await response.json()) as T;
-  } catch {
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[supabase-rest] network error:", err);
+    }
     return null;
   }
 }
