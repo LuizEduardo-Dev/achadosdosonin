@@ -1,6 +1,7 @@
 import { getSiteSettings } from "@/lib/data/storefront";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { PwaRegister } from "@/components/pwa-register";
 
 export default async function PublicLayout({
   children,
@@ -11,6 +12,7 @@ export default async function PublicLayout({
 
   return (
     <div className="flex min-h-screen flex-col">
+      <PwaRegister />
       <SiteHeader whatsappGroupUrl={settings.whatsapp_group_url} />
       <main className="flex-1">{children}</main>
       <SiteFooter />
