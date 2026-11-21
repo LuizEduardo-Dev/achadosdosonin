@@ -6,6 +6,7 @@ import {
   formatCurrencyBRL,
 } from "@/lib/format";
 import { UI_COPY } from "@/lib/config";
+import { resolveAchadoImageUrl } from "@/lib/supabase/storage";
 import { buttonClasses } from "@/components/ui/button";
 
 interface AchadoCardProps {
@@ -26,7 +27,7 @@ export function AchadoCard({ achado, priority = false }: AchadoCardProps) {
     <article className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-surface transition-colors hover:border-primary hover:bg-surface-2/80 sm:rounded-2xl">
       <div className="relative aspect-square w-full overflow-hidden bg-surface-2">
         <Image
-          src={achado.image_path}
+          src={resolveAchadoImageUrl(achado.image_path)}
           alt={`${achado.title} — oferta em ${achado.store}`}
           fill
           sizes="(max-width: 767px) 33vw, 25vw"
