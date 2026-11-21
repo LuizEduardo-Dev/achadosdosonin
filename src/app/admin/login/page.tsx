@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { ArrowLeft, Tag } from "lucide-react";
 import { getAuthenticatedAdmin } from "@/lib/auth";
 import { SITE_CONFIG } from "@/lib/config";
@@ -8,6 +9,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { LoginForm } from "@/components/admin/login-form";
 
 async function LoginContent() {
+  await connection();
   const admin = await getAuthenticatedAdmin();
   if (admin) {
     redirect("/admin");

@@ -1,8 +1,10 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { getAdminSiteSettings } from "@/lib/data/admin";
 import { SettingsForm } from "@/components/admin/settings-form";
 
 async function SettingsLoader() {
+  await connection();
   const settings = await getAdminSiteSettings();
   return <SettingsForm settings={settings} />;
 }

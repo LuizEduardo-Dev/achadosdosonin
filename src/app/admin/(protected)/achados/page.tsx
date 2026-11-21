@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { connection } from "next/server";
 import { CheckCircle2, Plus } from "lucide-react";
 import { getAdminAchados } from "@/lib/data/admin";
 import { AchadoListClient } from "@/components/admin/achado-list-client";
@@ -10,6 +11,7 @@ interface AdminAchadosPageProps {
 }
 
 async function AchadosContent({ searchParams }: AdminAchadosPageProps) {
+  await connection();
   const [achados, resolvedParams] = await Promise.all([
     getAdminAchados(),
     searchParams,

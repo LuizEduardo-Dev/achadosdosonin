@@ -1,10 +1,12 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { connection } from "next/server";
 import { ArrowLeft } from "lucide-react";
 import { getExistingStoreSuggestions } from "@/lib/data/admin";
 import { AchadoForm } from "@/components/admin/achado-form";
 
 async function NewAchadoFormLoader() {
+  await connection();
   const storeSuggestions = await getExistingStoreSuggestions();
   return <AchadoForm storeSuggestions={storeSuggestions} />;
 }

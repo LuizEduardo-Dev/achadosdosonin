@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { connection } from "next/server";
 import {
   Archive,
   CheckCircle2,
@@ -13,6 +14,7 @@ import { formatCurrencyBRL, formatDatePtBR } from "@/lib/format";
 import { buttonClasses } from "@/components/ui/button";
 
 async function DashboardContent() {
+  await connection();
   const achados = await getAdminAchados();
 
   const publishedCount = achados.filter((i) => i.status === "published").length;
