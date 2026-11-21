@@ -51,27 +51,27 @@ export function StorefrontView({ achados }: StorefrontViewProps) {
   }, [achados, selectedStore, sortBy]);
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+    <div className="mx-auto w-full max-w-6xl px-3 py-4 sm:px-6 sm:py-7">
       <section
         aria-labelledby="storefront-heading"
-        className="relative mb-6 overflow-hidden rounded-3xl border border-border bg-brand-gradient p-5 shadow-lg sm:mb-8 sm:p-7"
+        className="relative mb-4 overflow-hidden rounded-2xl border border-border bg-brand-gradient p-4 shadow-lg sm:mb-7 sm:rounded-3xl sm:p-6"
       >
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full bg-highlight/20 blur-3xl"
         />
-        <div className="relative max-w-2xl space-y-2.5">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-bg/60 px-3 py-1 text-xs font-semibold text-accent backdrop-blur-xs">
-            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+        <div className="relative max-w-2xl space-y-1.5 sm:space-y-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-bg/60 px-2.5 py-0.5 text-[11px] font-semibold text-accent backdrop-blur-xs sm:px-3 sm:py-1 sm:text-xs">
+            <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5" aria-hidden="true" />
             {UI_COPY.hero.badge}
           </span>
           <h1
             id="storefront-heading"
-            className="text-2xl font-extrabold tracking-tight text-text sm:text-3xl"
+            className="text-xl font-extrabold tracking-tight text-text sm:text-3xl"
           >
             {UI_COPY.hero.title}
           </h1>
-          <p className="text-sm leading-relaxed text-text-muted sm:text-base">
+          <p className="text-xs leading-relaxed text-text-muted sm:text-base">
             {UI_COPY.hero.subtitle}
           </p>
         </div>
@@ -79,7 +79,7 @@ export function StorefrontView({ achados }: StorefrontViewProps) {
 
       <section
         aria-label="Filtros e ordenação da vitrine"
-        className="mb-5 space-y-3 rounded-2xl border border-border/80 bg-surface/80 p-3.5 sm:mb-6 sm:p-4"
+        className="mb-4 space-y-2.5 rounded-2xl border border-border/80 bg-surface/80 p-3 sm:mb-6 sm:space-y-3 sm:p-4"
       >
         {stores.length > 0 && (
           <StoreFilter
@@ -89,10 +89,10 @@ export function StorefrontView({ achados }: StorefrontViewProps) {
           />
         )}
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-2.5 sm:pt-3">
           <p
             aria-live="polite"
-            className="text-sm font-semibold text-text-muted"
+            className="text-xs font-semibold text-text-muted sm:text-sm"
           >
             Exibindo{" "}
             <span className="font-bold text-text">
@@ -108,13 +108,13 @@ export function StorefrontView({ achados }: StorefrontViewProps) {
       </section>
 
       {filteredAndSortedAchados.length > 0 ? (
-        <section aria-label="Lista de achados">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
+        <section aria-label="Galeria de achados">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4 md:grid-cols-4 lg:gap-5">
             {filteredAndSortedAchados.map((achado, index) => (
               <AchadoCard
                 key={achado.id}
                 achado={achado}
-                priority={index < 3}
+                priority={index < 6}
               />
             ))}
           </div>
@@ -148,7 +148,7 @@ export function StorefrontView({ achados }: StorefrontViewProps) {
 
       <aside
         aria-label="Avisos importantes"
-        className="mt-8 rounded-2xl border border-border/70 bg-surface p-4 text-xs leading-relaxed text-text-muted sm:text-sm"
+        className="mt-6 rounded-2xl border border-border/70 bg-surface p-3.5 text-xs leading-relaxed text-text-muted sm:mt-8 sm:p-4 sm:text-sm"
       >
         <div className="flex items-start gap-2.5">
           <Info
