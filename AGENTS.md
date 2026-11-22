@@ -109,7 +109,7 @@ Regras gerais
   - Ícones em `public/icons/`: 192x192, 512x512 e versão **maskable**, mais `apple-touch-icon` 180x180 (iOS).
   - Service worker em `public/sw.js`, registrado no cliente. Se precisar de estratégias de cache mais avançadas, avaliar **Serwist** antes de escrever à mão.
   - Headers para `/sw.js` (`Content-Type: application/javascript`, `Cache-Control: no-cache, no-store, must-revalidate`). Definir em `next.config.ts`; se não surtir efeito no Netlify, usar `netlify.toml`.
-- Estratégia de cache: shell e assets estáticos em cache; lista de achados com *stale-while-revalidate*; **nunca** cachear `/admin`, rotas de API e respostas autenticadas.
+- Estratégia de cache: navegação/HTML com *network-first* (novos deploys chegam sem limpeza manual de cache, com fallback para página em cache ou `/offline` quando offline); assets versionados (`/_next/static/*`) em cache; nova versão do SW assume imediatamente (`skipWaiting` + `clients.claim`); **nunca** cachear `/admin`, rotas de API e respostas autenticadas.
 - Fallback offline simples (`/offline`).
 - PWA só funciona em HTTPS (ou `localhost`). Testar instalação com `next build && next start`, não só em `next dev`.
 - Validar com Lighthouse antes de entregar.
@@ -215,16 +215,18 @@ Dinheiro: guardar em **centavos** (inteiro) e formatar com `Intl.NumberFormat("p
 
 ## 7. Variáveis de ambiente
 
-Manter `.env.example` atualizado (sem valores reais). Nunca commitar `.env.local`.
+Manter `.env.example` atualizado (sem valores reais) e validado com Zod em `src/lib/env.ts` (separando cliente e servidor, falhando cedo no build). Nunca commitar `.env.local`.
 
 ```
-NEXT_PUBLIC_SITE_URL=
-NEXT_PUBLIC_WHATSAPP_GROUP_URL=   # valor padrão; o valor efetivo fica em site_settings
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=        # somente servidor, nunca no cliente
-ADMIN_EMAIL=
+NEXT_PUBLIC_SITE_URL=             # [pública] URL base do site (canonical, OG, robots)
+NEXT_PUBLIC_SUPABASE_URL=         # [pública] URL do projeto Supabase
+NEXT_PUBLIC_SUPABASE_ANON_KEY=    # [pública] chave Publishable / anon (protegida por RLS)
+NEXT_PUBLIC_WHATSAPP_GROUP_URL=   # [pública, opcional] fallback; valor efetivo fica em site_settings
+NEXT_PUBLIC_NETLIFY_CONTEXT=      # [pública, opcional] preenchida via CONTEXT do Netlify
+ADMIN_EMAIL=                      # [segredo/servidor] e-mail único do admin
 ```
+
+> `SUPABASE_SERVICE_ROLE_KEY` não é necessária nem utilizada no MVP, pois todas as operações do admin rodam sob sessão autenticada no Supabase Auth + políticas RLS.
 
 ## 8. Estrutura de pastas sugerida
 
