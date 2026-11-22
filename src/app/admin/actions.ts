@@ -1,13 +1,9 @@
 "use server";
 
-import { revalidatePath, updateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isAdminUser, requireAdmin } from "@/lib/auth";
-import {
-  ACHADOS_CACHE_TAG,
-  SITE_SETTINGS_CACHE_TAG,
-} from "@/lib/data/storefront";
 import { ACHADOS_STORAGE_BUCKET } from "@/lib/supabase/storage";
 import {
   achadoMutationSchema,
@@ -26,8 +22,6 @@ export interface ActionState {
 }
 
 function revalidateStorefrontAndAdmin() {
-  updateTag(ACHADOS_CACHE_TAG);
-  updateTag(SITE_SETTINGS_CACHE_TAG);
   revalidatePath("/");
   revalidatePath("/tt");
   revalidatePath("/ig");

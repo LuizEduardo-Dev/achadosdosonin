@@ -3,17 +3,13 @@ import { cookies } from "next/headers";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
 
 /**
- * Stateless public PostgREST fetch for `"use cache"` storefront reads (respects RLS).
- * Avoids GoTrueClient's module-scoped session locks inside Next.js 16 Cache Components.
+ * Stateless public PostgREST fetch for public storefront reads (respects RLS).
+ * Uses `cache: "no-store"` so newly published deals and settings appear immediately.
  */
 export async function fetchSupabasePublicRest<T>(
   pathAndQuery: string,
 ): Promise<T | null> {
   const env = getSupabasePublicEnv();
-  if (!env) {
-    return null;
-  }
-
   const baseUrl = env.url.replace(/\/$/, "");
   const headers: Record<string, string> = {
     apikey: env.anonKey,
@@ -29,24 +25,22 @@ export async function fetchSupabasePublicRest<T>(
     const response = await fetch(`${baseUrl}/rest/v1/${pathAndQuery}`, {
       method: "GET",
       headers,
+      cache: "no-store",
     });
 
     if (!response.ok) {
-      if (process.env.NODE_ENV === "development") {
-        console.error(
-          "[supabase-rest] request failed:",
-          response.status,
-          pathAndQuery,
-        );
-      }
+      const errorText = await response.text().catch(() => "");
+      console.error("[supabase-rest] request failed:", {
+        status: response.status,
+        path: pathAndQuery.split("?")[0],
+        body: errorText.slice(0, 200),
+      });
       return null;
     }
 
     return (await response.json()) as T;
   } catch (err) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[supabase-rest] network error:", err);
-    }
+    console.error("[supabase-rest] network error:", err);
     return null;
   }
 }
@@ -56,10 +50,6 @@ export async function fetchSupabasePublicRest<T>(
  */
 export async function createSupabaseServerClient() {
   const env = getSupabasePublicEnv();
-  if (!env) {
-    return null;
-  }
-
   const cookieStore = await cookies();
 
   return createServerClient(env.url, env.anonKey, {
