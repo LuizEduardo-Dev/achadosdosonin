@@ -6,6 +6,11 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isAdminUser, requireAdmin } from "@/lib/auth";
 import { ACHADOS_STORAGE_BUCKET } from "@/lib/supabase/storage";
 import {
+  extractZodFieldErrors,
+  mapSupabaseAuthError,
+  mapSupabaseMutationError,
+} from "@/lib/errors";
+import {
   achadoMutationSchema,
   deleteAchadoSchema,
   loginSchema,
@@ -71,19 +76,6 @@ function parseAchadoFormData(formData: FormData) {
   });
 }
 
-function extractFieldErrors(
-  issues: ReadonlyArray<{ path: PropertyKey[]; message: string }>,
-): Record<string, string> {
-  const fieldErrors: Record<string, string> = {};
-  for (const issue of issues) {
-    const key = String(issue.path[0] ?? "form");
-    if (!fieldErrors[key]) {
-      fieldErrors[key] = issue.message;
-    }
-  }
-  return fieldErrors;
-}
-
 export async function loginAction(
   _prevState: ActionState,
   formData: FormData,
@@ -97,20 +89,12 @@ export async function loginAction(
   if (!parsed.success) {
     return {
       error: "Verifique os dados informados.",
-      fieldErrors: extractFieldErrors(parsed.error.issues),
+      fieldErrors: extractZodFieldErrors(parsed.error.issues),
       values: { email: emailRaw },
     };
   }
 
   const supabase = await createSupabaseServerClient();
-  if (!supabase) {
-    return {
-      error:
-        "Supabase ainda não está configurado. Preencha as variáveis em .env.local.",
-      values: { email: emailRaw },
-    };
-  }
-
   const { data, error } = await supabase.auth.signInWithPassword({
     email: parsed.data.email,
     password: parsed.data.password,
@@ -123,63 +107,8 @@ export async function loginAction(
       message: error?.message,
     });
 
-    const msg = error?.message?.toLowerCase() ?? "";
-    const code = error?.code?.toLowerCase() ?? "";
-
-    if (
-      msg.includes("fetch failed") ||
-      msg.includes("enotfound") ||
-      msg.includes("timeout") ||
-      error?.status === 0
-    ) {
-      return {
-        error:
-          "Não foi possível conectar ao Supabase. Verifique NEXT_PUBLIC_SUPABASE_URL no .env.local e sua conexão.",
-        values: { email: emailRaw },
-      };
-    }
-
-    if (msg.includes("api key") || msg.includes("apikey")) {
-      return {
-        error:
-          "Chave da API do Supabase inválida. Verifique NEXT_PUBLIC_SUPABASE_ANON_KEY no .env.local.",
-        values: { email: emailRaw },
-      };
-    }
-
-    if (code === "email_not_confirmed") {
-      return {
-        error: "Este e-mail ainda não foi confirmado no Supabase Auth.",
-        values: { email: emailRaw },
-      };
-    }
-
-    if (code === "email_provider_disabled") {
-      return {
-        error:
-          "O login por e-mail está desativado no Supabase (mantenha Email ativado e desative apenas 'Allow new users to sign up').",
-        values: { email: emailRaw },
-      };
-    }
-
-    if (code === "over_request_rate_limit" || error?.status === 429) {
-      return {
-        error:
-          "Muitas tentativas seguidas. Aguarde alguns minutos e tente novamente.",
-        values: { email: emailRaw },
-      };
-    }
-
-    if (code === "captcha_failed") {
-      return {
-        error:
-          "A proteção CAPTCHA está ativada no Supabase Auth (Authentication → Attack Protection).",
-        values: { email: emailRaw },
-      };
-    }
-
     return {
-      error: "E-mail ou senha inválidos.",
+      error: mapSupabaseAuthError(error),
       values: { email: emailRaw },
     };
   }
@@ -197,27 +126,8 @@ export async function loginAction(
 
 export async function logoutAction(): Promise<void> {
   const supabase = await createSupabaseServerClient();
-  if (supabase) {
-    await supabase.auth.signOut();
-  }
+  await supabase.auth.signOut();
   redirect("/admin/login");
-}
-
-function formatMutationError(
-  actionLabel: "criar" | "atualizar",
-  error: { code?: string; message?: string; details?: string },
-): string {
-  const msg = (error.message ?? "").toLowerCase();
-
-  if (error.code === "PGRST204" || msg.includes("price_note")) {
-    return "A coluna 'price_note' ainda não existe no banco. Rode a migration 20261122000001_add_price_note.sql no SQL Editor do Supabase.";
-  }
-
-  if (error.code === "42501" || msg.includes("row-level security")) {
-    return "Permissão negada pelo RLS. Confirme app_metadata.role = 'admin' e faça logout e login novamente.";
-  }
-
-  return `Não foi possível ${actionLabel} o achado. Tente novamente.`;
 }
 
 export async function createAchadoAction(
@@ -230,15 +140,11 @@ export async function createAchadoAction(
   if (!parsed.success) {
     return {
       error: "Corrija os campos destacados antes de salvar.",
-      fieldErrors: extractFieldErrors(parsed.error.issues),
+      fieldErrors: extractZodFieldErrors(parsed.error.issues),
     };
   }
 
   const supabase = await createSupabaseServerClient();
-  if (!supabase) {
-    return { error: "Supabase não configurado." };
-  }
-
   const { error } = await supabase.from("achados").insert(parsed.data);
 
   if (error) {
@@ -248,7 +154,7 @@ export async function createAchadoAction(
       details: error.details,
     });
     return {
-      error: formatMutationError("criar", error),
+      error: mapSupabaseMutationError("criar o achado", error),
     };
   }
 
@@ -272,15 +178,11 @@ export async function updateAchadoAction(
   if (!parsed.success) {
     return {
       error: "Corrija os campos destacados antes de salvar.",
-      fieldErrors: extractFieldErrors(parsed.error.issues),
+      fieldErrors: extractZodFieldErrors(parsed.error.issues),
     };
   }
 
   const supabase = await createSupabaseServerClient();
-  if (!supabase) {
-    return { error: "Supabase não configurado." };
-  }
-
   const { error } = await supabase
     .from("achados")
     .update(parsed.data)
@@ -293,7 +195,7 @@ export async function updateAchadoAction(
       details: error.details,
     });
     return {
-      error: formatMutationError("atualizar", error),
+      error: mapSupabaseMutationError("atualizar o achado", error),
     };
   }
 
@@ -316,8 +218,6 @@ export async function updateAchadoStatusAction(
   }
 
   const supabase = await createSupabaseServerClient();
-  if (!supabase) return;
-
   await supabase
     .from("achados")
     .update({ status: parsed.data.status })
@@ -338,8 +238,6 @@ export async function deleteAchadoAction(formData: FormData): Promise<void> {
   }
 
   const supabase = await createSupabaseServerClient();
-  if (!supabase) return;
-
   const { data: existing } = await supabase
     .from("achados")
     .select("image_path")
@@ -382,23 +280,23 @@ export async function updateSiteSettingsAction(
   if (!parsed.success) {
     return {
       error: "Verifique os campos antes de salvar.",
-      fieldErrors: extractFieldErrors(parsed.error.issues),
+      fieldErrors: extractZodFieldErrors(parsed.error.issues),
     };
   }
 
   const supabase = await createSupabaseServerClient();
-  if (!supabase) {
-    return { error: "Supabase não configurado." };
-  }
-
   const { error } = await supabase
     .from("site_settings")
     .upsert({ id: 1, ...parsed.data }, { onConflict: "id" });
 
   if (error) {
+    console.error("[updateSiteSettingsAction] Supabase upsert error:", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+    });
     return {
-      error:
-        "Não foi possível salvar as configurações. Verifique as políticas RLS.",
+      error: mapSupabaseMutationError("salvar as configurações", error),
     };
   }
 
