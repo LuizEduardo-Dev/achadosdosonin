@@ -165,6 +165,22 @@ export async function loginAction(
       };
     }
 
+    if (code === "over_request_rate_limit" || error?.status === 429) {
+      return {
+        error:
+          "Muitas tentativas seguidas. Aguarde alguns minutos e tente novamente.",
+        values: { email: emailRaw },
+      };
+    }
+
+    if (code === "captcha_failed") {
+      return {
+        error:
+          "A proteção CAPTCHA está ativada no Supabase Auth (Authentication → Attack Protection).",
+        values: { email: emailRaw },
+      };
+    }
+
     return {
       error: "E-mail ou senha inválidos.",
       values: { email: emailRaw },
