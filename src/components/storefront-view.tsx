@@ -1,22 +1,62 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Info, SearchX, Sparkles } from "lucide-react";
-import type { Achado, SortOption } from "@/types/achado";
-import { UI_COPY } from "@/lib/config";
-import { formatAchadosCount } from "@/lib/format";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { MessageCircle, Search, Tag, X } from "lucide-react";
+import type {
+  Achado,
+  SiteSettings,
+  SortOption,
+  TrafficSource,
+} from "@/types/achado";
+import { SITE_CONFIG, SORT_OPTIONS, UI_COPY } from "@/lib/config";
 import { AchadoCard } from "@/components/achado-card";
 import { StoreFilter } from "@/components/store-filter";
 import { SortSelect } from "@/components/sort-select";
-import { Button } from "@/components/ui/button";
+import { StorefrontOverlays } from "@/components/storefront-overlays";
+import { Button, buttonClasses } from "@/components/ui/button";
+
+function normalizeForSearch(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
 
 interface StorefrontViewProps {
   achados: Achado[];
+  settings: SiteSettings;
+  source?: TrafficSource;
 }
 
-export function StorefrontView({ achados }: StorefrontViewProps) {
+export function StorefrontView({
+  achados,
+  settings,
+  source,
+}: StorefrontViewProps) {
+  const searchParams = useSearchParams();
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
   const [selectedStore, setSelectedStore] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
+
+  const whatsappUrl = settings.whatsapp_group_url.trim();
+
+  const handleQueryChange = (nextValue: string) => {
+    setQuery(nextValue);
+
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      const trimmed = nextValue.trim();
+      if (trimmed) {
+        url.searchParams.set("q", trimmed);
+      } else {
+        url.searchParams.delete("q");
+      }
+      window.history.replaceState(null, "", url.pathname + url.search);
+    }
+  };
 
   const stores = useMemo(() => {
     const uniqueStores = new Set<string>();
@@ -30,10 +70,21 @@ export function StorefrontView({ achados }: StorefrontViewProps) {
     );
   }, [achados]);
 
+  const normalizedQuery = useMemo(() => normalizeForSearch(query), [query]);
+
   const filteredAndSortedAchados = useMemo(() => {
-    const filtered = selectedStore
-      ? achados.filter((item) => item.store === selectedStore)
-      : achados;
+    const filtered = achados.filter((item) => {
+      if (selectedStore && item.store !== selectedStore) {
+        return false;
+      }
+      if (
+        normalizedQuery &&
+        !normalizeForSearch(item.title).includes(normalizedQuery)
+      ) {
+        return false;
+      }
+      return true;
+    });
 
     return [...filtered].sort((a, b) => {
       switch (sortBy) {
@@ -48,121 +99,164 @@ export function StorefrontView({ achados }: StorefrontViewProps) {
           );
       }
     });
-  }, [achados, selectedStore, sortBy]);
+  }, [achados, selectedStore, normalizedQuery, sortBy]);
+
+  const activeSortLabel =
+    SORT_OPTIONS.find((option) => option.value === sortBy)?.label ??
+    "Novidades";
+  const hasActiveFilter = Boolean(selectedStore || normalizedQuery);
+  const count = filteredAndSortedAchados.length;
+  const countLabel = `${count} ${count === 1 ? "achado" : "achados"}`;
+
+  const clearAllFilters = () => {
+    setSelectedStore(null);
+    handleQueryChange("");
+  };
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-3 py-4 sm:px-6 sm:py-7">
-      <section
-        aria-labelledby="storefront-heading"
-        className="relative mb-4 overflow-hidden rounded-2xl border border-border bg-brand-gradient p-4 shadow-lg sm:mb-7 sm:rounded-3xl sm:p-6"
-      >
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full bg-highlight/20 blur-3xl"
-        />
-        <div className="relative max-w-2xl space-y-1.5 sm:space-y-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-bg/60 px-2.5 py-0.5 text-[11px] font-semibold text-accent backdrop-blur-xs sm:px-3 sm:py-1 sm:text-xs">
-            <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5" aria-hidden="true" />
-            {UI_COPY.hero.badge}
-          </span>
-          <h1
-            id="storefront-heading"
-            className="text-xl font-extrabold tracking-tight text-text sm:text-3xl"
-          >
-            {UI_COPY.hero.title}
-          </h1>
-          <p className="text-xs leading-relaxed text-text-muted sm:text-base">
-            {UI_COPY.hero.subtitle}
-          </p>
+    <div className="flex flex-1 flex-col">
+      <header className="rounded-b-2xl bg-ink text-on-ink">
+        <div className="mx-auto w-full max-w-[1280px] px-3 py-4 sm:px-5 sm:py-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Link
+              href="/"
+              className="flex min-w-0 items-center gap-2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-sage"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ink-hover text-accent-sage">
+                <Tag className="h-4 w-4" aria-hidden="true" />
+              </span>
+              <span className="truncate text-base font-semibold text-on-ink sm:text-lg">
+                {SITE_CONFIG.name}
+              </span>
+            </Link>
+
+            {whatsappUrl && (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={UI_COPY.header.whatsappAriaLabel}
+                className={buttonClasses(
+                  "whatsapp",
+                  "sm",
+                  "order-2 shrink-0 font-semibold sm:order-3",
+                )}
+              >
+                <MessageCircle
+                  className="h-4 w-4 shrink-0"
+                  aria-hidden="true"
+                />
+                <span>{UI_COPY.header.whatsappCta}</span>
+              </a>
+            )}
+
+            <div className="order-3 w-full sm:order-2 sm:max-w-md sm:flex-1">
+              <div className="relative">
+                <Search
+                  className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-text-muted"
+                  aria-hidden="true"
+                />
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(event) => handleQueryChange(event.target.value)}
+                  placeholder={UI_COPY.header.searchPlaceholder}
+                  aria-label={UI_COPY.header.searchAriaLabel}
+                  className="min-h-10 w-full rounded-lg border border-border bg-surface py-2 pr-9 pl-9 text-sm text-text placeholder:text-text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link"
+                />
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => handleQueryChange("")}
+                    aria-label={UI_COPY.header.clearSearchAriaLabel}
+                    className="absolute top-1/2 right-2 inline-flex h-7 w-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-2 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link"
+                  >
+                    <X className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 border-t border-ink-hover pt-3.5 sm:mt-5 sm:pt-4">
+            <p className="text-xs font-medium text-accent-sage">
+              {UI_COPY.hero.badge}
+            </p>
+            <h1 className="mt-1 text-xl font-semibold tracking-[-0.01em] text-on-ink sm:text-2xl">
+              {UI_COPY.hero.title}
+            </h1>
+            <p className="mt-1 text-sm text-on-ink-muted">
+              {UI_COPY.hero.subtitle}
+            </p>
+          </div>
         </div>
-      </section>
+      </header>
 
-      <section
-        aria-label="Filtros e ordenação da vitrine"
-        className="mb-4 space-y-2.5 rounded-2xl border border-border/80 bg-surface/80 p-3 sm:mb-6 sm:space-y-3 sm:p-4"
-      >
-        {stores.length > 0 && (
-          <StoreFilter
-            stores={stores}
-            selectedStore={selectedStore}
-            onSelectStore={setSelectedStore}
-          />
-        )}
+      <StorefrontOverlays settings={settings} source={source} />
 
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-2.5 sm:pt-3">
+      <div className="mx-auto w-full max-w-[1280px] flex-1 space-y-4 px-3 py-4 sm:px-5 sm:py-6">
+        <StoreFilter
+          stores={stores}
+          selectedStore={selectedStore}
+          onSelectStore={setSelectedStore}
+        />
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <p
             aria-live="polite"
-            className="text-xs font-semibold text-text-muted sm:text-sm"
+            className="text-sm font-medium text-text"
           >
-            Exibindo{" "}
-            <span className="font-bold text-text">
-              {formatAchadosCount(
-                filteredAndSortedAchados.length,
-                selectedStore,
-              )}
+            <span>{activeSortLabel}</span>
+            <span className="mx-1.5 text-text-muted" aria-hidden="true">
+              ·
             </span>
+            <span className="text-text-muted">{countLabel}</span>
+            {selectedStore && (
+              <span className="text-text-muted"> em {selectedStore}</span>
+            )}
           </p>
 
           <SortSelect value={sortBy} onChange={setSortBy} />
         </div>
-      </section>
 
-      {filteredAndSortedAchados.length > 0 ? (
-        <section aria-label="Galeria de achados">
-          <div className="grid grid-cols-3 gap-2 sm:gap-4 md:grid-cols-4 lg:gap-5">
-            {filteredAndSortedAchados.map((achado, index) => (
-              <AchadoCard
-                key={achado.id}
-                achado={achado}
-                priority={index < 6}
-              />
-            ))}
-          </div>
-        </section>
-      ) : (
-        <section
-          aria-live="polite"
-          className="flex flex-col items-center justify-center rounded-2xl border border-border bg-surface px-6 py-12 text-center"
-        >
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-2 text-text-muted">
-            <SearchX className="h-6 w-6" aria-hidden="true" />
-          </div>
-          <h2 className="text-lg font-bold text-text">
-            {UI_COPY.filters.emptyTitle}
-          </h2>
-          <p className="mt-1 max-w-sm text-sm text-text-muted">
-            {UI_COPY.filters.emptyDescription}
-          </p>
-          {selectedStore && (
-            <Button
-              variant="secondary"
-              size="sm"
-              className="mt-4"
-              onClick={() => setSelectedStore(null)}
-            >
-              {UI_COPY.filters.clearFilters}
-            </Button>
-          )}
-        </section>
-      )}
-
-      <aside
-        aria-label="Avisos importantes"
-        className="mt-6 rounded-2xl border border-border/70 bg-surface p-3.5 text-xs leading-relaxed text-text-muted sm:mt-8 sm:p-4 sm:text-sm"
-      >
-        <div className="flex items-start gap-2.5">
-          <Info
-            className="mt-0.5 h-4 w-4 shrink-0 text-accent"
-            aria-hidden="true"
-          />
-          <div className="space-y-1">
-            <p className="font-semibold text-text">
-              {UI_COPY.disclaimers.priceNotice}
+        {filteredAndSortedAchados.length > 0 ? (
+          <section aria-label="Grade de achados">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+              {filteredAndSortedAchados.map((achado, index) => (
+                <AchadoCard
+                  key={achado.id}
+                  achado={achado}
+                  priority={index < 5}
+                />
+              ))}
+            </div>
+          </section>
+        ) : (
+          <section
+            aria-live="polite"
+            className="flex flex-col items-center justify-center rounded-lg border border-border bg-surface px-5 py-12 text-center"
+          >
+            <h2 className="text-base font-semibold text-text">
+              {UI_COPY.filters.emptyTitle}
+            </h2>
+            <p className="mt-1 max-w-md text-sm text-text-muted">
+              {hasActiveFilter
+                ? UI_COPY.filters.emptyFilteredDescription
+                : UI_COPY.filters.emptyDefaultDescription}
             </p>
-            <p>{UI_COPY.disclaimers.affiliateNotice}</p>
-          </div>
-        </div>
-      </aside>
+            {hasActiveFilter && (
+              <Button
+                variant="secondary"
+                size="md"
+                className="mt-4"
+                onClick={clearAllFilters}
+              >
+                {UI_COPY.filters.clearFilters}
+              </Button>
+            )}
+          </section>
+        )}
+      </div>
     </div>
   );
 }

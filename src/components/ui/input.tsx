@@ -5,13 +5,15 @@ import type {
 } from "react";
 
 const FIELD_BASE =
-  "w-full rounded-xl border border-border bg-surface-2 px-3.5 py-2.5 text-sm text-text placeholder:text-text-muted/60 transition-colors hover:border-primary/80 focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60";
+  "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-text-muted transition-colors hover:border-link/60 focus-visible:border-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link disabled:cursor-not-allowed disabled:bg-surface-2 disabled:opacity-70";
 
 export function Input({
   className = "",
   ...props
 }: InputHTMLAttributes<HTMLInputElement>) {
-  return <input className={`${FIELD_BASE} min-h-11 ${className}`.trim()} {...props} />;
+  return (
+    <input className={`${FIELD_BASE} min-h-10 ${className}`.trim()} {...props} />
+  );
 }
 
 export function Textarea({
@@ -32,7 +34,7 @@ export function Select({
 }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select
-      className={`${FIELD_BASE} min-h-11 cursor-pointer ${className}`.trim()}
+      className={`${FIELD_BASE} min-h-10 cursor-pointer ${className}`.trim()}
       {...props}
     />
   );

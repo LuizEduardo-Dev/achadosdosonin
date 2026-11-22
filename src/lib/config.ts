@@ -9,9 +9,9 @@ export function isValidTrafficSource(value: string): value is TrafficSource {
 export const SITE_CONFIG = {
   name: "Sonin Links",
   shortName: "Sonin Links",
-  tagline: "Os melhores achados e ofertas selecionados todos os dias",
+  tagline: "Ofertas e achados selecionados todos os dias",
   description:
-    "Curadoria diária de promoções, achados e descontos reais nas maiores lojas online. Entre no grupo do WhatsApp para receber em primeira mão.",
+    "Curadoria diária de promoções, produtos e ofertas nas maiores lojas online. Entre no grupo do WhatsApp para receber em primeira mão.",
   url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
   defaultWhatsappGroupUrl: process.env.NEXT_PUBLIC_WHATSAPP_GROUP_URL || "",
 } as const;
@@ -25,56 +25,56 @@ export const SORT_OPTIONS: ReadonlyArray<{ value: SortOption; label: string }> =
 export const UI_COPY = {
   header: {
     whatsappCta: "Grupo VIP",
-    whatsappAriaLabel: "Entrar no grupo de achados no WhatsApp",
+    whatsappAriaLabel: "Entrar no grupo de ofertas no WhatsApp",
+    searchPlaceholder: "Buscar achados por nome...",
+    searchAriaLabel: "Buscar achados por título",
+    clearSearchAriaLabel: "Limpar busca",
   },
   hero: {
     badge: "Curadoria diária",
     title: "Achados que valem o clique",
     subtitle:
-      "Promoções selecionadas a dedo nas principais lojas. Escolha sua loja favorita ou ordene pelo melhor preço.",
+      "Promoções conferidas todos os dias nas principais lojas online.",
   },
   filters: {
-    allStores: "Todas as lojas",
+    allStores: "Todas",
     storeFilterLabel: "Filtrar por loja",
     sortLabel: "Ordenar por",
     clearFilters: "Limpar filtros",
     emptyTitle: "Nenhum achado encontrado",
-    emptyDescription:
-      "Não encontramos ofertas para esse filtro agora. Tente ver todas as lojas.",
+    emptyFilteredDescription:
+      "Não encontramos ofertas com esse filtro ou busca. Limpe os filtros para ver toda a vitrine.",
+    emptyDefaultDescription:
+      "Ainda não há ofertas publicadas por aqui. Volte em breve.",
   },
   card: {
     cta: "Ver oferta",
     ctaAriaSuffix: "(abre em nova aba)",
     discountSuffix: "OFF",
   },
-  disclaimers: {
-    priceNotice: "Preços e disponibilidade podem mudar a qualquer momento.",
-    affiliateNotice:
-      "Transparência: os links desta vitrine podem gerar uma comissão ao curador, sem nenhum custo extra para você.",
+  footer: {
+    disclaimer:
+      "Preços e disponibilidade podem mudar. Links podem gerar comissão.",
   },
   welcomeModal: {
-    defaultTitle: "Entre no grupo do Sonin Links!",
+    defaultTitle: "Receba os achados no WhatsApp",
     defaultMessage:
-      "Receba os melhores achados, cupons e ofertas relâmpago direto no seu WhatsApp antes de esgotar.",
+      "Entre no grupo do Sonin Links para ver promoções e descontos assim que forem publicados.",
     ctaLabel: "Entrar no grupo",
     dismissLabel: "Agora não",
-    closeAriaLabel: "Fechar aviso de boas-vindas",
+    closeAriaLabel: "Fechar convite do grupo",
   },
   inAppBanner: {
-    badge: "Melhor experiência",
-    title: "Abra no navegador do seu celular",
-    description:
-      "O navegador interno do aplicativo costuma bloquear o login das lojas e travar a compra.",
     copyButton: "Copiar link do site",
-    copiedButton: "Link copiado!",
+    copiedButton: "Link copiado",
     continueButton: "Continuar aqui mesmo assim",
-    closeAriaLabel: "Dispensar aviso de navegador embutido",
+    closeAriaLabel: "Dispensar aviso",
   },
   notFound: {
     code: "404",
     title: "Página não encontrada",
     description:
-      "O link que você tentou acessar não existe ou foi removido.",
+      "O link que você tentou acessar não existe ou não está mais disponível.",
     backHome: "Voltar para a vitrine",
   },
 } as const;

@@ -6,6 +6,7 @@ import "./globals.css";
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
   display: "swap",
 });
 
@@ -53,8 +54,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1E0B3A",
-  colorScheme: "dark",
+  themeColor: "#180828",
+  colorScheme: "light",
 };
 
 export default function RootLayout({
