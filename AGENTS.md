@@ -13,13 +13,15 @@ Idioma da interface: **pt-BR**. Código, nomes de variáveis, commits e comentá
 ### 2.1 MVP (este escopo é o que deve ser construído agora)
 
 1. **Vitrine pública** com os achados publicados, com:
-   - filtro por **loja** (ex.: Shopee, Mercado Livre, Amazon; lista vem dos dados);
+   - **busca por título** no cliente (ignora maiúsculas e acentos, sincronizada com `?q=`);
+   - filtro por **loja** (ex.: Shopee, Mercado Livre, Amazon; lista vem dos dados; esconder faixa se houver menos de 2 lojas);
    - **ordenação**: novidades (padrão), menor preço, maior preço;
-   - contador de achados exibidos;
-   - texto fixo: "Preços e disponibilidade podem mudar" e aviso de que os links podem gerar comissão ao curador.
+   - contador de achados exibidos junto à ordenação ativa (`Novidades · N achados`);
+   - observação curta opcional de preço (`price_note`, até 40 caracteres, ex.: "à vista no PIX", "em até 10x sem juros");
+   - aviso único no rodapé: "Preços e disponibilidade podem mudar. Links podem gerar comissão."
 2. **Área de admin** (`/admin`) para gerenciar achados e configurações.
 3. **Modal de boas-vindas** com **um único link** de grupo de WhatsApp.
-4. **Rotas por origem de tráfego** (`/tt`, `/ig`, `/wpp`) com aviso para abrir no navegador quando o site é aberto dentro de um navegador embutido (ver 2.5).
+4. **Rotas por origem de tráfego** (`/tt`, `/ig`, `/wpp`) com aviso discreto para abrir no navegador quando o site é aberto dentro de um navegador embutido (ver 2.5).
 5. **PWA** instalável (ver 2.6).
 
 ### 2.2 Fora do MVP (v2, NÃO implementar agora)
@@ -96,43 +98,48 @@ Não existe backend separado: toda a lógica de servidor roda no próprio Next.j
 
 ## 4. Design e paleta de cores
 
-Tema principal: **roxo escuro**. O site é *dark-first*, com roxo profundo como base e um acento quente para destacar preços e CTAs.
+Visual limpo, profissional e de varejo (inspirado em e-commerces brasileiros como KaBuM! e Terabyte Shop): **roxo-noite quase preto (`--ink`)** como identidade no topo e nas ações primárias, **creme e verde sálvia** como base neutra, e **cards brancos** para valorizar fotos de produto.
 
-### Por que essas combinações
-- **Análogas** (violeta, magenta, índigo) dão profundidade e gradientes harmoniosos.
-- **Complementar** (amarelo/âmbar) é o oposto do roxo no círculo cromático: cria o maior contraste para preço, selo de "oferta" e botões primários.
-- **Neutros com tom lavanda** (em vez de cinza puro) mantêm a coerência e evitam aspecto "sujo" sobre fundo roxo.
-- Verde do WhatsApp é usado **apenas** em CTAs do WhatsApp, por reconhecimento de marca.
-
-### Tokens (definir como CSS variables / `@theme` do Tailwind)
+### Tokens (definir como CSS variables / `@theme` do Tailwind — única fonte de verdade)
 
 | Token | Hex | Uso |
 |---|---|---|
-| `--bg` | `#14072B` | Fundo da página |
-| `--surface` | `#1E0B3A` | Cards, header, modal |
-| `--surface-2` | `#2E1065` | Hover de cards, inputs, seções destacadas |
-| `--border` | `#4C1D95` | Bordas e divisores |
-| `--primary` | `#7C3AED` | Botões secundários, links, foco |
-| `--primary-hover` | `#8B5CF6` | Hover do primário |
-| `--accent` | `#F5B83D` | Preços, selo de oferta, CTA principal |
-| `--accent-hover` | `#FBBF24` | Hover do acento |
-| `--highlight` | `#D946EF` | Gradientes, detalhes decorativos (usar com parcimônia) |
-| `--text` | `#F5F3FF` | Texto principal |
-| `--text-muted` | `#C4B5FD` | Texto secundário |
-| `--whatsapp` | `#25D366` | Botão do WhatsApp |
-| `--success` | `#22C55E` | Sucesso |
-| `--danger` | `#F43F5E` | Erro / exclusão |
+| `--bg` | `#F5F4EE` | Fundo da página (creme neutro) |
+| `--surface` | `#FFFFFF` | Cards, inputs, modais, rodapé |
+| `--surface-2` | `#ECEEE5` | Hover de botões secundários, aviso discreto, skeletons, divisor de imagem |
+| `--border` | `#DDE0D3` | Bordas e divisores |
+| `--ink` | `#180828` | Faixa do topo, botão primário, chip ativo, barra superior do admin |
+| `--ink-hover` | `#2B1347` | Hover do primário e elementos internos sobre `--ink` |
+| `--link` | `#5B3A8E` | Links, foco (`outline`), borda hover do card |
+| `--price` | `#1B6E45` | Preço atual em destaque |
+| `--badge-bg` | `#E0F0E6` | Fundo de selo de desconto e ícone do modal |
+| `--badge-text` | `#165A38` | Texto de selo de desconto e estados de sucesso |
+| `--text` | `#1C1A24` | Texto principal |
+| `--text-muted` | `#65656B` | Texto secundário, nome da loja, preço riscado, `price_note` |
+| `--on-ink` | `#F3EFF8` | Texto principal sobre `--ink` |
+| `--on-ink-muted` | `#C9BEDC` | Texto secundário sobre `--ink` |
+| `--accent-sage` | `#A9D8B8` | Selo "Curadoria diária" e detalhes discretos sobre `--ink` |
+| `--whatsapp` | `#25D366` | Botão do WhatsApp (uso exclusivo, com texto `#04361A`) |
+| `--danger` | `#C0392B` | Erro e ações destrutivas (contorno por padrão; sólido apenas na confirmação) |
+| `--success` | `#1B6E45` | Sucesso |
 
-Gradiente de marca sugerido: `linear-gradient(135deg, #2E1065 0%, #7C3AED 100%)`.
-
-### Regras
-- Contraste mínimo **WCAG AA** (4.5:1 para texto normal). Verifique qualquer combinação nova.
-- Texto sobre `--accent` deve ser escuro (`--bg`), nunca branco.
-- Nada de cores hardcoded em componentes: usar apenas os tokens.
-- `theme_color` do manifest = `--surface`; `background_color` = `--bg`.
-- Mobile-first. Testar em 360 px de largura.
+### Tipografia, raios e regras
+- **Fonte**: uma única família sans legível (`Plus Jakarta Sans` ou `Inter`) via `next/font`, pesos `400`, `500` e `600`.
+- **Letter-spacing**: normal (`0`) em textos de leitura; no máximo `-0.01em` em títulos grandes. Preços com `font-variant-numeric: tabular-nums`.
+- **Raios de borda**: `8px` em cards, inputs e botões; `999px` apenas em chips; `12px` no modal; `16px` nos cantos inferiores da faixa do topo.
+- **Botões**: primário sólido `--ink` (com parcimônia); secundário com contorno `1px --ink` (fundo transparente, hover `--surface-2`); WhatsApp sólido `#25D366` com texto `#04361A`; destrutivo com contorno `--danger` e sólido `--danger` somente na confirmação.
+- **Card de achado**: o card inteiro é um único `<a>` para o link de afiliado (botão "Ver oferta" apenas visual em `<span>`), imagem quadrada `1/1` com fundo branco e `object-fit: contain` + padding `8px`, linha de `price_note` com altura reservada para alinhamento.
+- **Grade**: 2 colunas (`<640px`), 3 (`>=640px`), 4 (`>=1024px`), 5 (`>=1280px`), container `max-width: 1280px` com padding lateral `12px` (mobile) / `20px`.
+- **Contraste mínimo WCAG AA** (`4.5:1` para texto normal). Nada de cores hardcoded em componentes: usar apenas os tokens.
+- `theme_color` do manifest = `#180828` (`--ink`); `background_color` = `#F5F4EE` (`--bg`).
+- Mobile-first. Testar em `360px`, `768px`, `1024px` e `1280px`.
 - **Não** bloquear zoom (`user-scalable=no` / `maximum-scale=1` no viewport): prejudica acessibilidade.
 - Open Graph e Twitter Card completos (imagem 1200x630, título e descrição em pt-BR), pois o tráfego vem de links compartilhados.
+
+### O que evitar
+- **Proibido**: glow, sombras coloridas, gradientes, neon, magenta/rosa saturado.
+- Sombras apenas neutras e muito suaves (ex.: hover de card e modal).
+- Sem decoração desnecessária no admin; skeletons neutros (`--surface-2`) em vez de spinners coloridos.
 
 ## 5. Modelo de dados (MVP)
 
@@ -141,6 +148,7 @@ Tabelas mínimas no Postgres (Supabase). Toda alteração de schema deve vir com
 **`achados`**
 - `id` uuid (PK), `title` text, `description` text null
 - `price_cents` integer, `original_price_cents` integer null
+- `price_note` text null (observação curta de preço, até 40 caracteres, ex.: "à vista no PIX")
 - `store` text (nome da loja, ex.: "Shopee"), `affiliate_url` text
 - `image_path` text (caminho no Storage)
 - `status` text: `draft` | `published` | `archived`
@@ -238,12 +246,14 @@ Antes de finalizar qualquer tarefa: rodar `npm run lint` e `npm run build` e gar
 
 ## 11. Definição de pronto
 
-- [ ] Funciona e é legível em 360 px de largura
-- [ ] Contraste AA nas cores usadas
-- [ ] Rotas admin protegidas no servidor e RLS ativo nas tabelas novas
+- [ ] Funciona e é legível em `360px`, `768px`, `1024px` e `1280px`
+- [ ] Contraste WCAG AA (`4.5:1`) em todos os pares de cores usados
+- [ ] Sem glow, sombras coloridas, gradientes, neon ou cores hardcoded nos componentes
+- [ ] Card de achado como link único (`<a>`), imagem `1/1` em fundo branco (`object-contain`), `price_note` opcional alinhado
+- [ ] Rotas admin protegidas no servidor e RLS ativo nas tabelas e migrations
 - [ ] Modal respeita frequência e acessibilidade, não aparece no admin e não sobrepõe o aviso de navegador embutido
 - [ ] `/tt`, `/ig`, `/wpp` funcionam; outros segmentos retornam 404
-- [ ] Filtro por loja e ordenação funcionando
+- [ ] Busca por título (`?q=`, sem acento/maiúsculas), filtro por loja e ordenação funcionando
 - [ ] Lighthouse: PWA instalável, Acessibilidade ≥ 90
 - [ ] `lint` e `build` sem erros
 - [ ] `.env.example` atualizado se houve nova variável
