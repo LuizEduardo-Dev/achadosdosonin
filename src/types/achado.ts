@@ -6,6 +6,7 @@ export interface Achado {
   description: string | null;
   price_cents: number;
   original_price_cents: number | null;
+  price_note: string | null;
   store: string;
   affiliate_url: string;
   image_path: string;

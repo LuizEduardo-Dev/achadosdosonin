@@ -36,6 +36,11 @@ export const achadoMutationSchema = z
       .int("Preço original inválido.")
       .positive("O preço original deve ser maior que zero.")
       .nullable(),
+    price_note: z
+      .string()
+      .trim()
+      .max(40, "A observação do preço pode ter no máximo 40 caracteres.")
+      .nullable(),
     store: z
       .string()
       .trim()

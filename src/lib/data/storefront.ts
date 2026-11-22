@@ -9,8 +9,27 @@ export const ACHADOS_CACHE_TAG = "achados";
 export const SITE_SETTINGS_CACHE_TAG = "site-settings";
 
 /**
+ * Set to `false` once you want to disable the 3-item development preview fallback.
+ * Never activates in production builds (`NODE_ENV === "production"`).
+ */
+const ENABLE_DEV_MOCK_FALLBACK = process.env.NODE_ENV === "development";
+
+const ACHADOS_SELECT_COLUMNS =
+  "id,title,description,price_cents,original_price_cents,price_note,store,affiliate_url,image_path,status,created_at,updated_at,expires_at";
+
+const ACHADOS_SELECT_LEGACY_COLUMNS =
+  "id,title,description,price_cents,original_price_cents,store,affiliate_url,image_path,status,created_at,updated_at,expires_at";
+
+function getDevMockAchados(): Achado[] {
+  return MOCK_ACHADOS.filter((item) => item.status === "published").sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  );
+}
+
+/**
  * Fetches published and non-expired deals ordered by newest first.
- * Reads from Supabase when configured; falls back to curated mock data otherwise.
+ * Reads from Supabase when configured; falls back to 3 dev preview items when empty in development.
  */
 export async function getPublishedAchados(): Promise<Achado[]> {
   "use cache";
@@ -18,17 +37,30 @@ export async function getPublishedAchados(): Promise<Achado[]> {
   cacheLife("minutes");
 
   if (!isSupabaseConfigured()) {
-    return MOCK_ACHADOS.filter((item) => item.status === "published").sort(
-      (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-    );
+    return ENABLE_DEV_MOCK_FALLBACK ? getDevMockAchados() : [];
   }
 
-  const data = await fetchSupabasePublicRest<Achado[]>(
-    "achados?select=id,title,description,price_cents,original_price_cents,store,affiliate_url,image_path,status,created_at,updated_at,expires_at&status=eq.published&order=created_at.desc",
+  let data = await fetchSupabasePublicRest<Achado[]>(
+    `achados?select=${ACHADOS_SELECT_COLUMNS}&status=eq.published&order=created_at.desc`,
   );
 
-  return Array.isArray(data) ? data : [];
+  // Graceful fallback if the `price_note` migration has not been applied to Supabase yet
+  if (data === null) {
+    const legacyRows = await fetchSupabasePublicRest<
+      Omit<Achado, "price_note">[]
+    >(
+      `achados?select=${ACHADOS_SELECT_LEGACY_COLUMNS}&status=eq.published&order=created_at.desc`,
+    );
+    if (Array.isArray(legacyRows)) {
+      data = legacyRows.map((row) => ({ ...row, price_note: null }));
+    }
+  }
+
+  if (Array.isArray(data) && data.length > 0) {
+    return data;
+  }
+
+  return ENABLE_DEV_MOCK_FALLBACK ? getDevMockAchados() : [];
 }
 
 /**
