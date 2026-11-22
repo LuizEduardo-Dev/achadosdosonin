@@ -18,11 +18,11 @@ As migrations em `supabase/migrations/` criam toda a estrutura do zero (extensã
 
 **Opção A — Pelo SQL Editor (mais simples):**
 1. No painel do Supabase, abra **SQL Editor → New query**.
-2. Copie e execute **primeiro** todo o conteúdo de:
-   - `supabase/migrations/20261121000001_initial_schema.sql`
-3. Depois, abra uma nova query e execute todo o conteúdo de:
-   - `supabase/migrations/20261122000001_add_price_note.sql`
-4. Confirme que ambos retornaram **Success**.
+2. Execute, **nesta ordem**, o conteúdo de cada migration:
+   1. `supabase/migrations/20261121000001_initial_schema.sql`
+   2. `supabase/migrations/20261122000001_add_price_note.sql`
+   3. `supabase/migrations/20261122000002_grant_table_privileges.sql`
+3. Confirme que todas retornaram **Success**.
 
 **Opção B — Via Supabase CLI (opcional):**
 ```bash
