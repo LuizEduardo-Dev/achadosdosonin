@@ -6,11 +6,6 @@ const env = getServerEnv();
 const previewMode = isPreviewDeployment();
 
 const nextConfig: NextConfig = {
-  experimental: {
-    agentFeedback: true,
-  },
-  cacheComponents: true,
-  partialPrefetching: true,
   env: {
     // Forward Netlify's built-in CONTEXT into a public env var so `?debugInApp=`
     // works automatically in deploy-preview / branch-deploy and stays disabled in production.

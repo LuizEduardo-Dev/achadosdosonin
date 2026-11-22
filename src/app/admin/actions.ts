@@ -45,7 +45,10 @@ function parseAchadoFormData(formData: FormData) {
 
   let expiresAtIso: string | null = null;
   if (expiresAtRaw) {
-    const parsedDate = new Date(expiresAtRaw);
+    const withTimezone = /(Z|[+-]\d{2}:\d{2})$/i.test(expiresAtRaw)
+      ? expiresAtRaw
+      : `${expiresAtRaw}-03:00`;
+    const parsedDate = new Date(withTimezone);
     expiresAtIso = Number.isNaN(parsedDate.getTime())
       ? "INVALID_DATE"
       : parsedDate.toISOString();

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { SITE_CONFIG } from "@/lib/config";
 
-export const instant = false;
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: {
