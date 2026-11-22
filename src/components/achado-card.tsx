@@ -29,7 +29,7 @@ export function AchadoCard({ achado, priority = false }: AchadoCardProps) {
       aria-label={`${achado.title} na ${achado.store} por ${formatCurrencyBRL(achado.price_cents)} ${UI_COPY.card.ctaAriaSuffix}`}
       className="card-hover-shadow group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface text-left hover:border-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link"
     >
-      <div className="relative aspect-square w-full border-b border-surface-2 bg-surface p-2">
+      <div className="relative aspect-square w-full bg-surface p-2">
         <div className="relative h-full w-full">
           <Image
             src={resolveAchadoImageUrl(achado.image_path)}
@@ -48,7 +48,7 @@ export function AchadoCard({ achado, priority = false }: AchadoCardProps) {
         )}
       </div>
 
-      <div className="flex flex-1 flex-col p-3">
+      <div className="flex flex-1 flex-col px-3 pt-1 pb-3">
         <p className="truncate text-[11px] font-medium text-text-muted sm:text-xs">
           {achado.store}
         </p>
@@ -75,7 +75,7 @@ export function AchadoCard({ achado, priority = false }: AchadoCardProps) {
           </span>
         </div>
 
-        <span className="mt-3 flex min-h-10 w-full items-center justify-center rounded-lg bg-ink px-3 text-sm font-medium text-on-ink transition-colors group-hover:bg-ink-hover">
+        <span className="mt-3 flex min-h-10 w-full items-center justify-center rounded-lg border border-ink bg-transparent px-3 text-sm font-medium text-ink transition-colors duration-150 group-hover:bg-ink group-hover:text-on-ink group-focus-visible:bg-ink group-focus-visible:text-on-ink">
           {UI_COPY.card.cta}
         </span>
       </div>

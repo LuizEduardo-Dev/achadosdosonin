@@ -54,13 +54,53 @@ Ao projetar o modelo de dados e os componentes do MVP, **não bloquear** essas e
 - Não renderizar nas rotas `/admin`.
 - O link do grupo vem da configuração no banco (variável de ambiente como valor padrão), nunca hardcoded no componente.
 
-### 2.5 Rotas por origem e navegador embutido
-- Rotas aceitas: `/tt` (TikTok), `/ig` (Instagram), `/wpp` (WhatsApp). Todas renderizam a **mesma vitrine** da home. Manter uma lista fixa (whitelist) de origens; qualquer outro segmento retorna 404.
-- Motivo: navegadores embutidos (TikTok, Instagram, Facebook) costumam bloquear o login das lojas, e a compra trava para o visitante.
-- Detectar navegador embutido no cliente via `navigator.userAgent` (padrões como `TikTok`, `musical_ly`, `BytedanceWebview`, `Instagram`, `FBAN`, `FBAV`). Detecção é "melhor esforço" e pode falhar; sempre permitir "Continuar aqui mesmo assim".
-- Quando detectado, mostrar aviso dispensável com instruções curtas: tocar nos três pontinhos, escolher "Abrir no navegador", e um botão "Copiar link do site".
-- As instruções devem poder ser ajustadas por origem (o menu do TikTok e o do Instagram diferem).
-- Canonical e `og:url` sempre apontam para `/`.
+### 2.5 Navegador embutido (TikTok, Instagram, Facebook) e rotas por origem
+
+Rotas por origem
+- /tt, /ig e /wpp renderizam a MESMA vitrine da home (whitelist; outro segmento
+  retorna 404). A rota é só uma dica de origem. A detecção de navegador
+  embutido NÃO depende da rota: roda em qualquer página.
+
+Detecção
+- Feita no cliente, após a montagem (evitar erro de hidratação), com a
+  biblioteca `inapp-spy` (ou regex de user agent como alternativa). Detectar
+  pelo menos: tiktok, instagram, facebook, messenger.
+- Política por app, centralizada em UM arquivo de configuração:
+    tiktok: "strong" | instagram: "soft" | facebook: "soft" |
+    messenger: "soft" | demais: "off"
+- Sair do navegador embutido remove o aviso automaticamente (o user agent muda).
+
+Comportamento "strong" (TikTok)
+- Painel (bottom sheet) na primeira visita de cada sessão (sessionStorage),
+  com role="dialog", foco gerenciado e respeito a prefers-reduced-motion.
+- Conteúdo: título direto (ex.: "Abra no navegador para comprar sem travar"),
+  passo a passo curto ("toque nos três pontinhos no canto superior direito e
+  escolha Abrir no navegador"), seta apontando para o menu, botão "Copiar
+  link do site" (secundário, com contorno) e saída discreta
+  "Continuar aqui mesmo assim".
+- Android: botão primário "Abrir no navegador" que navega para
+  `intent:<URL atual completa, sem hash>#Intent;end`, preservando query/UTM.
+  Além disso, UMA tentativa automática por sessão (flag em sessionStorage)
+  com window.location.replace(intentLink) logo ao detectar; se a página
+  continuar visível após ~1,5 s, exibir o painel normalmente.
+- iOS: somente instruções manuais. Não implementar atalhos nem hacks de
+  esquemas de URL (não são confiáveis).
+
+Comportamento "soft" (Instagram, Facebook, Messenger)
+- Faixa discreta no topo (--surface-2, borda --border), dispensável, com o
+  mesmo texto curto e botão "Copiar link". Sem redirecionamento automático.
+  Se dispensada, não reaparece por 24 h (localStorage).
+
+Regras gerais
+- Nunca bloquear o conteúdo: sempre permitir continuar no navegador embutido.
+- O redirecionamento automático só leva à mesma URL, nunca a outra página.
+- O modal de boas-vindas só aparece depois que o painel/faixa for dispensado
+  ou se não houver navegador embutido (nunca dois overlays juntos).
+- Canonical e og:url sempre apontam para "/".
+- Em desenvolvimento/preview (nunca em produção), permitir simular com
+  ?debugInApp=tiktok|instagram|facebook, para testar sem o app real.
+- Limitação conhecida: não há saída programática confiável no iOS, e os apps
+  mudam o comportamento com o tempo; testar em Android e iPhone reais.
 
 ### 2.6 PWA
 - Instalável em Android/iOS/desktop.
@@ -128,7 +168,7 @@ Visual limpo, profissional e de varejo (inspirado em e-commerces brasileiros com
 - **Letter-spacing**: normal (`0`) em textos de leitura; no máximo `-0.01em` em títulos grandes. Preços com `font-variant-numeric: tabular-nums`.
 - **Raios de borda**: `8px` em cards, inputs e botões; `999px` apenas em chips; `12px` no modal; `16px` nos cantos inferiores da faixa do topo.
 - **Botões**: primário sólido `--ink` (com parcimônia); secundário com contorno `1px --ink` (fundo transparente, hover `--surface-2`); WhatsApp sólido `#25D366` com texto `#04361A`; destrutivo com contorno `--danger` e sólido `--danger` somente na confirmação.
-- **Card de achado**: o card inteiro é um único `<a>` para o link de afiliado (botão "Ver oferta" apenas visual em `<span>`), imagem quadrada `1/1` com fundo branco e `object-fit: contain` + padding `8px`, linha de `price_note` com altura reservada para alinhamento.
+- **Card de achado**: o card inteiro é um único `<a>` para o link de afiliado; apenas a borda externa `1px --border` (sem linha divisória abaixo da imagem nem contêineres aninhados com borda); imagem quadrada `1/1` com fundo branco e `object-fit: contain` + padding `8px`; linha de `price_note` com altura reservada para alinhamento; botão visual "Ver oferta" (`<span>`) com contorno `1px --ink`, fundo transparente e texto `--ink` (altura mínima `40px`, largura total), preenchendo com fundo `--ink` e texto branco no hover e focus-visible.
 - **Grade**: 2 colunas (`<640px`), 3 (`>=640px`), 4 (`>=1024px`), 5 (`>=1280px`), container `max-width: 1280px` com padding lateral `12px` (mobile) / `20px`.
 - **Contraste mínimo WCAG AA** (`4.5:1` para texto normal). Nada de cores hardcoded em componentes: usar apenas os tokens.
 - `theme_color` do manifest = `#180828` (`--ink`); `background_color` = `#F5F4EE` (`--bg`).
