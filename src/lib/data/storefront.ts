@@ -1,18 +1,11 @@
 import { cacheLife, cacheTag } from "next/cache";
 import type { Achado, SiteSettings } from "@/types/achado";
-import { MOCK_ACHADOS, MOCK_SITE_SETTINGS } from "@/lib/data/mock-data";
-import { SITE_CONFIG, UI_COPY } from "@/lib/config";
-import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { UI_COPY } from "@/lib/config";
+import { getClientEnv } from "@/lib/env";
 import { fetchSupabasePublicRest } from "@/lib/supabase/server";
 
 export const ACHADOS_CACHE_TAG = "achados";
 export const SITE_SETTINGS_CACHE_TAG = "site-settings";
-
-/**
- * Set to `false` once you want to disable the 3-item development preview fallback.
- * Never activates in production builds (`NODE_ENV === "production"`).
- */
-const ENABLE_DEV_MOCK_FALLBACK = process.env.NODE_ENV === "development";
 
 const ACHADOS_SELECT_COLUMNS =
   "id,title,description,price_cents,original_price_cents,price_note,store,affiliate_url,image_path,status,created_at,updated_at,expires_at";
@@ -20,25 +13,13 @@ const ACHADOS_SELECT_COLUMNS =
 const ACHADOS_SELECT_LEGACY_COLUMNS =
   "id,title,description,price_cents,original_price_cents,store,affiliate_url,image_path,status,created_at,updated_at,expires_at";
 
-function getDevMockAchados(): Achado[] {
-  return MOCK_ACHADOS.filter((item) => item.status === "published").sort(
-    (a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-  );
-}
-
 /**
- * Fetches published and non-expired deals ordered by newest first.
- * Reads from Supabase when configured; falls back to 3 dev preview items when empty in development.
+ * Fetches published and non-expired deals ordered by newest first directly from Supabase (RLS enforced).
  */
 export async function getPublishedAchados(): Promise<Achado[]> {
   "use cache";
   cacheTag(ACHADOS_CACHE_TAG);
   cacheLife("minutes");
-
-  if (!isSupabaseConfigured()) {
-    return ENABLE_DEV_MOCK_FALLBACK ? getDevMockAchados() : [];
-  }
 
   let data = await fetchSupabasePublicRest<Achado[]>(
     `achados?select=${ACHADOS_SELECT_COLUMNS}&status=eq.published&order=created_at.desc`,
@@ -56,11 +37,7 @@ export async function getPublishedAchados(): Promise<Achado[]> {
     }
   }
 
-  if (Array.isArray(data) && data.length > 0) {
-    return data;
-  }
-
-  return ENABLE_DEV_MOCK_FALLBACK ? getDevMockAchados() : [];
+  return Array.isArray(data) ? data : [];
 }
 
 /**
@@ -71,9 +48,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
   cacheTag(SITE_SETTINGS_CACHE_TAG);
   cacheLife("minutes");
 
-  if (!isSupabaseConfigured()) {
-    return MOCK_SITE_SETTINGS;
-  }
+  const defaultWhatsappUrl = getClientEnv().NEXT_PUBLIC_WHATSAPP_GROUP_URL;
 
   const rows = await fetchSupabasePublicRest<SiteSettings[]>(
     "site_settings?select=whatsapp_group_url,modal_enabled,modal_title,modal_message&id=eq.1&limit=1",
@@ -83,7 +58,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
 
   if (!data) {
     return {
-      whatsapp_group_url: SITE_CONFIG.defaultWhatsappGroupUrl,
+      whatsapp_group_url: defaultWhatsappUrl,
       modal_enabled: true,
       modal_title: UI_COPY.welcomeModal.defaultTitle,
       modal_message: UI_COPY.welcomeModal.defaultMessage,
@@ -91,8 +66,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
   }
 
   return {
-    whatsapp_group_url:
-      data.whatsapp_group_url?.trim() || SITE_CONFIG.defaultWhatsappGroupUrl,
+    whatsapp_group_url: data.whatsapp_group_url?.trim() || defaultWhatsappUrl,
     modal_enabled: Boolean(data.modal_enabled),
     modal_title: data.modal_title || UI_COPY.welcomeModal.defaultTitle,
     modal_message: data.modal_message || UI_COPY.welcomeModal.defaultMessage,
