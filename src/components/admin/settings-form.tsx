@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { AlertCircle, CheckCircle2, Save } from "lucide-react";
 import type { SiteSettings } from "@/types/achado";
 import {
@@ -17,13 +17,22 @@ interface SettingsFormProps {
 }
 
 export function SettingsForm({ settings }: SettingsFormProps) {
+  const [whatsappGroupUrl, setWhatsappGroupUrl] = useState(
+    settings.whatsapp_group_url,
+  );
+  const [modalEnabled, setModalEnabled] = useState(settings.modal_enabled);
+  const [modalTitle, setModalTitle] = useState(settings.modal_title);
+  const [modalMessage, setModalMessage] = useState(settings.modal_message);
+
   const [state, formAction, isPending] = useActionState(
     updateSiteSettingsAction,
     INITIAL_STATE,
   );
 
+  const fieldErrors = state.fieldErrors;
+
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} noValidate className="space-y-4">
       {state.error && (
         <div
           role="alert"
@@ -61,15 +70,18 @@ export function SettingsForm({ settings }: SettingsFormProps) {
           id="settings-whatsapp"
           name="whatsapp_group_url"
           type="url"
-          defaultValue={settings.whatsapp_group_url}
+          value={whatsappGroupUrl}
+          onChange={(event) => setWhatsappGroupUrl(event.target.value)}
+          aria-invalid={Boolean(fieldErrors?.whatsapp_group_url)}
+          className={fieldErrors?.whatsapp_group_url ? "border-danger" : ""}
           placeholder="https://chat.whatsapp.com/..."
         />
         <p className="text-xs text-text-muted">
           Usado no botão do topo e no modal de boas-vindas da vitrine.
         </p>
-        {state.fieldErrors?.whatsapp_group_url && (
+        {fieldErrors?.whatsapp_group_url && (
           <p className="text-xs text-danger">
-            {state.fieldErrors.whatsapp_group_url}
+            {fieldErrors.whatsapp_group_url}
           </p>
         )}
       </div>
@@ -78,7 +90,8 @@ export function SettingsForm({ settings }: SettingsFormProps) {
         <input
           type="checkbox"
           name="modal_enabled"
-          defaultChecked={settings.modal_enabled}
+          checked={modalEnabled}
+          onChange={(event) => setModalEnabled(event.target.checked)}
           className="mt-0.5 h-4 w-4 accent-ink"
         />
         <div>
@@ -104,10 +117,13 @@ export function SettingsForm({ settings }: SettingsFormProps) {
           name="modal_title"
           required
           maxLength={120}
-          defaultValue={settings.modal_title}
+          value={modalTitle}
+          onChange={(event) => setModalTitle(event.target.value)}
+          aria-invalid={Boolean(fieldErrors?.modal_title)}
+          className={fieldErrors?.modal_title ? "border-danger" : ""}
         />
-        {state.fieldErrors?.modal_title && (
-          <p className="text-xs text-danger">{state.fieldErrors.modal_title}</p>
+        {fieldErrors?.modal_title && (
+          <p className="text-xs text-danger">{fieldErrors.modal_title}</p>
         )}
       </div>
 
@@ -123,12 +139,13 @@ export function SettingsForm({ settings }: SettingsFormProps) {
           name="modal_message"
           required
           maxLength={400}
-          defaultValue={settings.modal_message}
+          value={modalMessage}
+          onChange={(event) => setModalMessage(event.target.value)}
+          aria-invalid={Boolean(fieldErrors?.modal_message)}
+          className={fieldErrors?.modal_message ? "border-danger" : ""}
         />
-        {state.fieldErrors?.modal_message && (
-          <p className="text-xs text-danger">
-            {state.fieldErrors.modal_message}
-          </p>
+        {fieldErrors?.modal_message && (
+          <p className="text-xs text-danger">{fieldErrors.modal_message}</p>
         )}
       </div>
 

@@ -37,9 +37,9 @@ export const UI_COPY = {
   },
   hero: {
     badge: "Curadoria diária",
-    title: "Achados que valem o clique",
+    title: "Descontos reais, garimpados todo dia",
     subtitle:
-      "Promoções conferidas todos os dias nas principais lojas online.",
+      "Achados conferidos a dedo nas maiores lojas — preço baixo de verdade, direto no link.",
   },
   filters: {
     allStores: "Todas",

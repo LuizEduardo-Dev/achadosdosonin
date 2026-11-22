@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { AlertCircle, Save } from "lucide-react";
-import type { Achado } from "@/types/achado";
+import type { Achado, AchadoStatus } from "@/types/achado";
 import {
   createAchadoAction,
   updateAchadoAction,
@@ -32,6 +32,22 @@ interface AchadoFormProps {
 
 export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
   const [imagePath, setImagePath] = useState(achado?.image_path ?? "");
+  const [title, setTitle] = useState(achado?.title ?? "");
+  const [description, setDescription] = useState(achado?.description ?? "");
+  const [price, setPrice] = useState(formatCentsForInput(achado?.price_cents));
+  const [originalPrice, setOriginalPrice] = useState(
+    formatCentsForInput(achado?.original_price_cents),
+  );
+  const [priceNote, setPriceNote] = useState(achado?.price_note ?? "");
+  const [store, setStore] = useState(achado?.store ?? "");
+  const [status, setStatus] = useState<AchadoStatus>(
+    achado?.status ?? "published",
+  );
+  const [affiliateUrl, setAffiliateUrl] = useState(achado?.affiliate_url ?? "");
+  const [expiresAt, setExpiresAt] = useState(
+    toDateTimeLocalValue(achado?.expires_at),
+  );
+
   const boundAction = achado
     ? updateAchadoAction.bind(null, achado.id)
     : createAchadoAction;
@@ -41,8 +57,10 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
     INITIAL_STATE,
   );
 
+  const fieldErrors = state.fieldErrors;
+
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} noValidate className="space-y-4">
       {state.error && (
         <div
           role="alert"
@@ -59,7 +77,7 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
       <ImageUploadField
         value={imagePath}
         onChange={setImagePath}
-        error={state.fieldErrors?.image_path}
+        error={fieldErrors?.image_path}
       />
 
       <div className="space-y-1.5">
@@ -71,11 +89,14 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
           name="title"
           required
           maxLength={160}
-          defaultValue={achado?.title ?? ""}
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          aria-invalid={Boolean(fieldErrors?.title)}
+          className={fieldErrors?.title ? "border-danger" : ""}
           placeholder="Ex.: Fone Bluetooth TWS com Cancelamento de Ruído"
         />
-        {state.fieldErrors?.title && (
-          <p className="text-xs text-danger">{state.fieldErrors.title}</p>
+        {fieldErrors?.title && (
+          <p className="text-xs text-danger">{fieldErrors.title}</p>
         )}
       </div>
 
@@ -91,11 +112,14 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
           id="achado-description"
           name="description"
           maxLength={320}
-          defaultValue={achado?.description ?? ""}
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+          aria-invalid={Boolean(fieldErrors?.description)}
+          className={fieldErrors?.description ? "border-danger" : ""}
           placeholder="Resumo rápido da oferta..."
         />
-        {state.fieldErrors?.description && (
-          <p className="text-xs text-danger">{state.fieldErrors.description}</p>
+        {fieldErrors?.description && (
+          <p className="text-xs text-danger">{fieldErrors.description}</p>
         )}
       </div>
 
@@ -112,13 +136,14 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
             name="price"
             inputMode="decimal"
             required
-            defaultValue={formatCentsForInput(achado?.price_cents)}
+            value={price}
+            onChange={(event) => setPrice(event.target.value)}
+            aria-invalid={Boolean(fieldErrors?.price_cents)}
+            className={fieldErrors?.price_cents ? "border-danger" : ""}
             placeholder="129,90"
           />
-          {state.fieldErrors?.price_cents && (
-            <p className="text-xs text-danger">
-              {state.fieldErrors.price_cents}
-            </p>
+          {fieldErrors?.price_cents && (
+            <p className="text-xs text-danger">{fieldErrors.price_cents}</p>
           )}
         </div>
 
@@ -134,12 +159,15 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
             id="achado-original-price"
             name="original_price"
             inputMode="decimal"
-            defaultValue={formatCentsForInput(achado?.original_price_cents)}
+            value={originalPrice}
+            onChange={(event) => setOriginalPrice(event.target.value)}
+            aria-invalid={Boolean(fieldErrors?.original_price_cents)}
+            className={fieldErrors?.original_price_cents ? "border-danger" : ""}
             placeholder="249,90"
           />
-          {state.fieldErrors?.original_price_cents && (
+          {fieldErrors?.original_price_cents && (
             <p className="text-xs text-danger">
-              {state.fieldErrors.original_price_cents}
+              {fieldErrors.original_price_cents}
             </p>
           )}
         </div>
@@ -159,11 +187,14 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
           id="achado-price-note"
           name="price_note"
           maxLength={40}
-          defaultValue={achado?.price_note ?? ""}
+          value={priceNote}
+          onChange={(event) => setPriceNote(event.target.value)}
+          aria-invalid={Boolean(fieldErrors?.price_note)}
+          className={fieldErrors?.price_note ? "border-danger" : ""}
           placeholder="Ex.: à vista no PIX ou em até 10x sem juros"
         />
-        {state.fieldErrors?.price_note && (
-          <p className="text-xs text-danger">{state.fieldErrors.price_note}</p>
+        {fieldErrors?.price_note && (
+          <p className="text-xs text-danger">{fieldErrors.price_note}</p>
         )}
       </div>
 
@@ -181,16 +212,19 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
             list="store-suggestions"
             required
             maxLength={60}
-            defaultValue={achado?.store ?? ""}
+            value={store}
+            onChange={(event) => setStore(event.target.value)}
+            aria-invalid={Boolean(fieldErrors?.store)}
+            className={fieldErrors?.store ? "border-danger" : ""}
             placeholder="Shopee, Mercado Livre, Amazon..."
           />
           <datalist id="store-suggestions">
-            {storeSuggestions.map((store) => (
-              <option key={store} value={store} />
+            {storeSuggestions.map((item) => (
+              <option key={item} value={item} />
             ))}
           </datalist>
-          {state.fieldErrors?.store && (
-            <p className="text-xs text-danger">{state.fieldErrors.store}</p>
+          {fieldErrors?.store && (
+            <p className="text-xs text-danger">{fieldErrors.store}</p>
           )}
         </div>
 
@@ -204,7 +238,10 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
           <Select
             id="achado-status"
             name="status"
-            defaultValue={achado?.status ?? "published"}
+            value={status}
+            onChange={(event) => setStatus(event.target.value as AchadoStatus)}
+            aria-invalid={Boolean(fieldErrors?.status)}
+            className={fieldErrors?.status ? "border-danger" : ""}
           >
             <option value="published" className="bg-surface text-text">
               Publicado (visível na vitrine)
@@ -216,8 +253,8 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
               Arquivado
             </option>
           </Select>
-          {state.fieldErrors?.status && (
-            <p className="text-xs text-danger">{state.fieldErrors.status}</p>
+          {fieldErrors?.status && (
+            <p className="text-xs text-danger">{fieldErrors.status}</p>
           )}
         </div>
       </div>
@@ -234,13 +271,14 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
           name="affiliate_url"
           type="url"
           required
-          defaultValue={achado?.affiliate_url ?? ""}
+          value={affiliateUrl}
+          onChange={(event) => setAffiliateUrl(event.target.value)}
+          aria-invalid={Boolean(fieldErrors?.affiliate_url)}
+          className={fieldErrors?.affiliate_url ? "border-danger" : ""}
           placeholder="https://shope.ee/..."
         />
-        {state.fieldErrors?.affiliate_url && (
-          <p className="text-xs text-danger">
-            {state.fieldErrors.affiliate_url}
-          </p>
+        {fieldErrors?.affiliate_url && (
+          <p className="text-xs text-danger">{fieldErrors.affiliate_url}</p>
         )}
       </div>
 
@@ -256,13 +294,17 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
           id="achado-expires-at"
           name="expires_at"
           type="datetime-local"
-          defaultValue={toDateTimeLocalValue(achado?.expires_at)}
+          value={expiresAt}
+          onChange={(event) => setExpiresAt(event.target.value)}
+          aria-invalid={Boolean(fieldErrors?.expires_at)}
+          className={fieldErrors?.expires_at ? "border-danger" : ""}
         />
         <p className="text-xs text-text-muted">
-          Se definida, o achado deixa de aparecer na vitrine após esse horário.
+          Deixe em branco se não tiver prazo. Se definida, o achado sai da
+          vitrine após esse horário (fuso de Brasília).
         </p>
-        {state.fieldErrors?.expires_at && (
-          <p className="text-xs text-danger">{state.fieldErrors.expires_at}</p>
+        {fieldErrors?.expires_at && (
+          <p className="text-xs text-danger">{fieldErrors.expires_at}</p>
         )}
       </div>
 
