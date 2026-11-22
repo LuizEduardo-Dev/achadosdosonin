@@ -13,7 +13,7 @@ export default function AdminSettingsPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-5">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-text">
+        <h1 className="text-xl font-semibold tracking-[-0.01em] text-text sm:text-2xl">
           Configurações
         </h1>
         <p className="text-sm text-text-muted">
@@ -21,11 +21,9 @@ export default function AdminSettingsPage() {
         </p>
       </div>
 
-      <div className="rounded-3xl border border-border bg-surface p-5 sm:p-6">
+      <div className="rounded-lg border border-border bg-surface p-5 sm:p-6">
         <Suspense
-          fallback={
-            <div className="h-72 animate-pulse rounded-2xl bg-surface-2" />
-          }
+          fallback={<div className="h-72 rounded-lg bg-surface-2" />}
         >
           <SettingsLoader />
         </Suspense>

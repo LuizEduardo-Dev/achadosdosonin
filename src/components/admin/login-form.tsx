@@ -23,15 +23,15 @@ export function LoginForm({ supabaseConfigured }: LoginFormProps) {
       {!supabaseConfigured && (
         <div
           role="alert"
-          className="rounded-2xl border border-accent/50 bg-surface-2 p-3.5 text-xs leading-relaxed text-text"
+          className="rounded-lg border border-border bg-surface-2 p-3.5 text-xs leading-relaxed text-text"
         >
-          <p className="font-bold text-accent">
+          <p className="font-semibold text-text">
             Supabase ainda não conectado
           </p>
           <p className="mt-1 text-text-muted">
-            Configure <code className="text-text">NEXT_PUBLIC_SUPABASE_URL</code> e{" "}
-            <code className="text-text">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> no arquivo{" "}
-            <code className="text-text">.env.local</code> e reinicie o servidor para fazer login.
+            Configure <code className="font-medium text-text">NEXT_PUBLIC_SUPABASE_URL</code> e{" "}
+            <code className="font-medium text-text">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> no arquivo{" "}
+            <code className="font-medium text-text">.env.local</code> e reinicie o servidor para entrar.
           </p>
         </div>
       )}
@@ -39,7 +39,7 @@ export function LoginForm({ supabaseConfigured }: LoginFormProps) {
       {state.error && (
         <div
           role="alert"
-          className="flex items-start gap-2 rounded-2xl border border-danger/60 bg-danger/10 p-3 text-sm text-text"
+          className="flex items-start gap-2 rounded-lg border border-danger bg-surface-2 p-3 text-sm text-danger"
         >
           <AlertCircle
             className="mt-0.5 h-4 w-4 shrink-0 text-danger"
@@ -50,7 +50,7 @@ export function LoginForm({ supabaseConfigured }: LoginFormProps) {
       )}
 
       <div className="space-y-1.5">
-        <label htmlFor="admin-email" className="block text-sm font-semibold text-text">
+        <label htmlFor="admin-email" className="block text-sm font-medium text-text">
           E-mail
         </label>
         <Input
@@ -69,7 +69,7 @@ export function LoginForm({ supabaseConfigured }: LoginFormProps) {
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="admin-password" className="block text-sm font-semibold text-text">
+        <label htmlFor="admin-password" className="block text-sm font-medium text-text">
           Senha
         </label>
         <Input
@@ -88,9 +88,9 @@ export function LoginForm({ supabaseConfigured }: LoginFormProps) {
 
       <Button
         type="submit"
-        variant="accent"
+        variant="primary"
         size="lg"
-        className="w-full font-bold"
+        className="w-full"
         disabled={isPending || !supabaseConfigured}
       >
         <Lock className="h-4 w-4" aria-hidden="true" />
