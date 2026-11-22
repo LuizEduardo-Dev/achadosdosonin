@@ -1,4 +1,5 @@
 import type { SortOption, TrafficSource } from "@/types/achado";
+import { getClientEnv } from "@/lib/env";
 
 export const TRAFFIC_SOURCES = ["tt", "ig", "wpp"] as const satisfies readonly TrafficSource[];
 
@@ -12,8 +13,12 @@ export const SITE_CONFIG = {
   tagline: "Ofertas e achados selecionados todos os dias",
   description:
     "Curadoria diária de promoções, produtos e ofertas nas maiores lojas online. Entre no grupo do WhatsApp para receber em primeira mão.",
-  url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-  defaultWhatsappGroupUrl: process.env.NEXT_PUBLIC_WHATSAPP_GROUP_URL || "",
+  get url() {
+    return getClientEnv().NEXT_PUBLIC_SITE_URL;
+  },
+  get defaultWhatsappGroupUrl() {
+    return getClientEnv().NEXT_PUBLIC_WHATSAPP_GROUP_URL;
+  },
 } as const;
 
 export const SORT_OPTIONS: ReadonlyArray<{ value: SortOption; label: string }> = [

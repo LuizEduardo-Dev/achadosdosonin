@@ -1,4 +1,5 @@
 import InAppSpy from "inapp-spy";
+import { isPreviewDeployment } from "@/lib/env";
 import {
   getInAppPolicy,
   type InAppAppKey,
@@ -23,14 +24,7 @@ const DEBUG_ALLOWED_APPS: ReadonlySet<InAppAppKey> = new Set([
 ]);
 
 function isDebugInAppAllowed(): boolean {
-  if (process.env.NODE_ENV !== "production") {
-    return true;
-  }
-
-  const netlifyContext = process.env.NEXT_PUBLIC_NETLIFY_CONTEXT;
-  return (
-    netlifyContext === "deploy-preview" || netlifyContext === "branch-deploy"
-  );
+  return process.env.NODE_ENV !== "production" || isPreviewDeployment();
 }
 
 export function detectMobileOS(userAgent: string): MobileOS {

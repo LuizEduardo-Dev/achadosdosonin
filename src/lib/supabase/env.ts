@@ -1,19 +1,23 @@
+import { getClientEnv } from "@/lib/env";
+
 export interface SupabasePublicEnv {
   url: string;
   anonKey: string;
 }
 
-export function getSupabasePublicEnv(): SupabasePublicEnv | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
-
-  if (!url || !anonKey) {
-    return null;
-  }
-
-  return { url, anonKey };
+export function getSupabasePublicEnv(): SupabasePublicEnv {
+  const env = getClientEnv();
+  return {
+    url: env.NEXT_PUBLIC_SUPABASE_URL,
+    anonKey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  };
 }
 
 export function isSupabaseConfigured(): boolean {
-  return getSupabasePublicEnv() !== null;
+  try {
+    getSupabasePublicEnv();
+    return true;
+  } catch {
+    return false;
+  }
 }
