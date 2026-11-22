@@ -1,4 +1,9 @@
 import type { NextConfig } from "next";
+import { getServerEnv, isPreviewDeployment } from "./src/lib/env";
+
+// Fail fast on build/dev startup if required environment variables are missing or invalid.
+const env = getServerEnv();
+const previewMode = isPreviewDeployment();
 
 const nextConfig: NextConfig = {
   experimental: {
@@ -6,6 +11,11 @@ const nextConfig: NextConfig = {
   },
   cacheComponents: true,
   partialPrefetching: true,
+  env: {
+    // Forward Netlify's built-in CONTEXT into a public env var so `?debugInApp=`
+    // works automatically in deploy-preview / branch-deploy and stays disabled in production.
+    NEXT_PUBLIC_NETLIFY_CONTEXT: env.CONTEXT || env.NEXT_PUBLIC_NETLIFY_CONTEXT,
+  },
   images: {
     remotePatterns: [
       {
@@ -16,7 +26,7 @@ const nextConfig: NextConfig = {
     ],
   },
   async headers() {
-    return [
+    const rules = [
       {
         source: "/sw.js",
         headers: [
@@ -48,6 +58,21 @@ const nextConfig: NextConfig = {
         ],
       },
     ];
+
+    // Prevent search engines from indexing Netlify preview/branch deploys while keeping production indexable.
+    if (previewMode) {
+      rules.push({
+        source: "/:path*",
+        headers: [
+          {
+            key: "X-Robots-Tag",
+            value: "noindex, nofollow",
+          },
+        ],
+      });
+    }
+
+    return rules;
   },
   turbopack: {
     rules: {

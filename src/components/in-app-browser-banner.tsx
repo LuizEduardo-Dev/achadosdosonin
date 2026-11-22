@@ -1,21 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Compass, Copy, ExternalLink, X } from "lucide-react";
-import type { TrafficSource } from "@/types/achado";
+import { ArrowUpRight, Check, Copy, ExternalLink, X } from "lucide-react";
+import type { InAppAppKey, InAppPolicy } from "@/lib/in-app-policy";
 import {
-  getInAppInstructions,
-  type InAppBrowserPlatform,
+  buildAndroidIntentUrl,
+  getInAppCopy,
+  type MobileOS,
 } from "@/lib/detect-in-app-browser";
 import { UI_COPY } from "@/lib/config";
-import { Button } from "@/components/ui/button";
-
-interface InAppBrowserBannerProps {
-  open: boolean;
-  platform: InAppBrowserPlatform | null;
-  source?: TrafficSource;
-  onDismiss: () => void;
-}
+import { Button, buttonClasses } from "@/components/ui/button";
 
 const FOCUSABLE_SELECTOR = [
   "a[href]",
@@ -26,22 +20,38 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(", ");
 
+interface InAppBrowserBannerProps {
+  open: boolean;
+  policy: Exclude<InAppPolicy, "off">;
+  appKey: InAppAppKey | null;
+  os: MobileOS;
+  onDismiss: () => void;
+}
+
 export function InAppBrowserBanner({
   open,
-  platform,
-  source,
+  policy,
+  appKey,
+  os,
   onDismiss,
 }: InAppBrowserBannerProps) {
   const [copied, setCopied] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  const isStrong = policy === "strong";
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !isStrong) return;
 
     const dialog = dialogRef.current;
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    closeButtonRef.current?.focus();
+    if (!dialog) return;
+
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+    const focusableElements = Array.from(
+      dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+    );
+    focusableElements[0]?.focus();
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -50,14 +60,9 @@ export function InAppBrowserBanner({
         return;
       }
 
-      if (event.key !== "Tab" || !dialog) {
+      if (event.key !== "Tab" || focusableElements.length === 0) {
         return;
       }
-
-      const focusableElements = Array.from(
-        dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
-      );
-      if (focusableElements.length === 0) return;
 
       const firstElement = focusableElements[0];
       const lastElement = focusableElements[focusableElements.length - 1];
@@ -76,21 +81,28 @@ export function InAppBrowserBanner({
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     document.addEventListener("keydown", handleKeyDown);
+
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", handleKeyDown);
-      previouslyFocused?.focus();
+      previousFocusRef.current?.focus();
     };
-  }, [open, onDismiss]);
+  }, [open, isStrong, onDismiss]);
 
   if (!open) {
     return null;
   }
 
-  const instructions = getInAppInstructions(platform, source);
+  const copy = getInAppCopy(appKey);
+  const currentHref =
+    typeof window !== "undefined" ? window.location.href : "";
+  const androidIntentUrl =
+    isStrong && os === "android" && currentHref
+      ? buildAndroidIntentUrl(currentHref)
+      : null;
 
   const handleCopyUrl = async () => {
-    const shareUrl = `${window.location.origin}/`;
+    const shareUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`;
 
     try {
       if (navigator.clipboard?.writeText) {
@@ -113,94 +125,133 @@ export function InAppBrowserBanner({
     }
   };
 
-  return (
-    <div
-      className="animate-modal-overlay fixed inset-0 z-50 flex items-end justify-center bg-bg/80 p-4 backdrop-blur-xs sm:items-center"
-      role="presentation"
-    >
+  if (isStrong) {
+    return (
       <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="in-app-browser-title"
-        aria-describedby="in-app-browser-desc"
-        className="animate-modal-content relative w-full max-w-md rounded-3xl border border-border bg-surface p-5 shadow-2xl sm:p-6"
+        className="animate-modal-overlay fixed inset-0 z-50 flex items-end justify-center bg-text/60 sm:items-center sm:p-4"
+        onClick={(event) => {
+          if (event.target === event.currentTarget) {
+            onDismiss();
+          }
+        }}
       >
-        <button
-          ref={closeButtonRef}
-          type="button"
-          onClick={onDismiss}
-          aria-label={UI_COPY.inAppBanner.closeAriaLabel}
-          className="absolute top-4 right-4 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-text-muted transition-colors hover:bg-surface-2 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        <div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="in-app-strong-title"
+          aria-describedby="in-app-strong-desc"
+          className="animate-modal-content modal-shadow relative w-full max-w-md rounded-t-2xl border border-border bg-surface p-5 sm:rounded-xl sm:p-6"
         >
-          <X className="h-5 w-5" aria-hidden="true" />
-        </button>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1 text-xs font-medium text-text">
+              <span>Menu no topo direito</span>
+              <ArrowUpRight className="h-3.5 w-3.5 text-link" aria-hidden="true" />
+            </span>
 
-        <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-2 px-3 py-1 text-xs font-semibold text-accent">
-          <Compass className="h-3.5 w-3.5" aria-hidden="true" />
-          <span>{UI_COPY.inAppBanner.badge}</span>
+            <button
+              type="button"
+              onClick={onDismiss}
+              aria-label={UI_COPY.inAppBanner.closeAriaLabel}
+              className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-2 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link"
+            >
+              <X className="h-5 w-5" aria-hidden="true" />
+            </button>
+          </div>
+
+          <h2
+            id="in-app-strong-title"
+            className="text-lg font-semibold leading-snug text-text sm:text-xl"
+          >
+            {copy.strongTitle}
+          </h2>
+
+          <p
+            id="in-app-strong-desc"
+            className="mt-2 text-sm leading-relaxed text-text-muted"
+          >
+            {copy.strongSteps}
+          </p>
+
+          <div className="mt-5 flex flex-col gap-2.5">
+            {androidIntentUrl && (
+              <a
+                href={androidIntentUrl}
+                className={buttonClasses("primary", "md", "w-full")}
+              >
+                <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>Abrir no navegador</span>
+              </a>
+            )}
+
+            <Button
+              variant="secondary"
+              size="md"
+              className="w-full"
+              onClick={handleCopyUrl}
+            >
+              {copied ? (
+                <>
+                  <Check className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>{UI_COPY.inAppBanner.copiedButton}</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>{UI_COPY.inAppBanner.copyButton}</span>
+                </>
+              )}
+            </Button>
+
+            <button
+              type="button"
+              onClick={onDismiss}
+              className="min-h-10 w-full cursor-pointer rounded-lg px-3 text-sm font-medium text-text-muted transition-colors hover:bg-surface-2 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link"
+            >
+              {UI_COPY.inAppBanner.continueButton}
+            </button>
+          </div>
         </div>
+      </div>
+    );
+  }
 
-        <h2
-          id="in-app-browser-title"
-          className="pr-8 text-xl font-extrabold leading-tight text-text"
-        >
-          {UI_COPY.inAppBanner.title}
-        </h2>
-
-        <p
-          id="in-app-browser-desc"
-          className="mt-2 text-sm leading-relaxed text-text-muted"
-        >
-          {UI_COPY.inAppBanner.description}
+  return (
+    <div className="mx-auto w-full max-w-[1280px] px-3 pt-3 sm:px-5">
+      <aside
+        role="region"
+        aria-label="Aviso de navegador embutido"
+        className="flex flex-col gap-2.5 rounded-lg border border-border bg-surface-2 px-3.5 py-3 text-sm text-text sm:flex-row sm:items-center sm:justify-between"
+      >
+        <p className="min-w-0 flex-1 text-xs leading-relaxed text-text sm:text-sm">
+          {copy.softMessage}
         </p>
 
-        <ol className="mt-4 space-y-2.5 rounded-2xl border border-border/80 bg-surface-2/80 p-3.5 text-sm text-text">
-          <li className="flex items-start gap-2.5">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-text">
-              1
-            </span>
-            <span className="pt-0.5 leading-snug">{instructions.steps[0]}</span>
-          </li>
-          <li className="flex items-start gap-2.5">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-text">
-              2
-            </span>
-            <span className="pt-0.5 leading-snug">{instructions.steps[1]}</span>
-          </li>
-        </ol>
-
-        <div className="mt-5 flex flex-col gap-2.5">
-          <Button
-            variant="accent"
-            size="md"
-            className="w-full font-bold"
-            onClick={handleCopyUrl}
-          >
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={handleCopyUrl}>
             {copied ? (
               <>
-                <Check className="h-4 w-4" aria-hidden="true" />
+                <Check className="h-3.5 w-3.5" aria-hidden="true" />
                 <span>{UI_COPY.inAppBanner.copiedButton}</span>
               </>
             ) : (
               <>
-                <Copy className="h-4 w-4" aria-hidden="true" />
-                <span>{UI_COPY.inAppBanner.copyButton}</span>
+                <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Copiar link</span>
               </>
             )}
           </Button>
 
-          <Button
-            variant="ghost"
-            size="md"
-            className="w-full"
+          <button
+            type="button"
             onClick={onDismiss}
+            aria-label={UI_COPY.inAppBanner.closeAriaLabel}
+            className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link"
           >
-            <ExternalLink className="h-4 w-4" aria-hidden="true" />
-            <span>{UI_COPY.inAppBanner.continueButton}</span>
-          </Button>
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
         </div>
-      </div>
+      </aside>
     </div>
   );
 }

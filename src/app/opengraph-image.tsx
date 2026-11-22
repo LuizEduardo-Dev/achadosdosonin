@@ -19,8 +19,8 @@ export default function OpenGraphImage() {
           flexDirection: "column",
           justifyContent: "space-between",
           padding: "64px",
-          background: "linear-gradient(135deg, #14072B 0%, #2E1065 55%, #7C3AED 100%)",
-          color: "#F5F3FF",
+          backgroundColor: "#180828",
+          color: "#F3EFF8",
           fontFamily: "sans-serif",
         }}
       >
@@ -28,7 +28,6 @@ export default function OpenGraphImage() {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "16px",
           }}
         >
           <div
@@ -36,34 +35,34 @@ export default function OpenGraphImage() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              padding: "10px 22px",
+              padding: "8px 20px",
               borderRadius: "999px",
-              background: "#F5B83D",
-              color: "#14072B",
-              fontSize: "24px",
-              fontWeight: 800,
+              border: "2px solid #A9D8B8",
+              color: "#A9D8B8",
+              fontSize: "22px",
+              fontWeight: 600,
             }}
           >
-            Curadoria diária de ofertas
+            Curadoria diária
           </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
           <div
             style={{
-              fontSize: "78px",
-              fontWeight: 900,
-              letterSpacing: "-0.03em",
-              lineHeight: 1.05,
+              fontSize: "74px",
+              fontWeight: 600,
+              letterSpacing: "-0.01em",
+              lineHeight: 1.08,
             }}
           >
             {SITE_CONFIG.name}
           </div>
           <div
             style={{
-              fontSize: "34px",
-              color: "#C4B5FD",
-              maxWidth: "900px",
+              fontSize: "32px",
+              color: "#C9BEDC",
+              maxWidth: "880px",
               lineHeight: 1.35,
             }}
           >
@@ -76,15 +75,15 @@ export default function OpenGraphImage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            borderTop: "2px solid rgba(196, 181, 253, 0.25)",
-            paddingTop: "28px",
-            fontSize: "24px",
-            color: "#C4B5FD",
+            borderTop: "2px solid #2B1347",
+            paddingTop: "24px",
+            fontSize: "22px",
+            color: "#C9BEDC",
           }}
         >
-          <span>Shopee • Mercado Livre • Amazon</span>
-          <span style={{ color: "#F5B83D", fontWeight: 700 }}>
-            Ofertas verificadas todos os dias
+          <span>Shopee · Mercado Livre · Amazon</span>
+          <span style={{ color: "#A9D8B8", fontWeight: 600 }}>
+            Ofertas selecionadas todos os dias
           </span>
         </div>
       </div>

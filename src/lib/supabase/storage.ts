@@ -1,3 +1,5 @@
+import { getClientEnv } from "@/lib/env";
+
 export const ACHADOS_STORAGE_BUCKET = "achados-images";
 export const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 export const ALLOWED_IMAGE_MIME_TYPES = [
@@ -9,7 +11,7 @@ export const ALLOWED_IMAGE_MIME_TYPES = [
 export function resolveAchadoImageUrl(imagePath: string): string {
   const trimmed = imagePath.trim();
   if (!trimmed) {
-    return "/images/mock/fone-tws.png";
+    return "/icons/icon-512x512.png";
   }
 
   if (
@@ -20,12 +22,7 @@ export function resolveAchadoImageUrl(imagePath: string): string {
     return trimmed;
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  if (!supabaseUrl) {
-    return trimmed;
-  }
-
-  const cleanBase = supabaseUrl.replace(/\/$/, "");
+  const cleanBase = getClientEnv().NEXT_PUBLIC_SUPABASE_URL.replace(/\/$/, "");
   const cleanPath = trimmed.replace(/^\/+/, "");
   return `${cleanBase}/storage/v1/object/public/${ACHADOS_STORAGE_BUCKET}/${cleanPath}`;
 }

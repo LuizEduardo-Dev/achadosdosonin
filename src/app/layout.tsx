@@ -1,13 +1,17 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { SITE_CONFIG } from "@/lib/config";
+import { isPreviewDeployment } from "@/lib/env";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
   display: "swap",
 });
+
+const previewDeployment = isPreviewDeployment();
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_CONFIG.url),
@@ -16,6 +20,14 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_CONFIG.name}`,
   },
   description: SITE_CONFIG.description,
+  ...(previewDeployment
+    ? {
+        robots: {
+          index: false,
+          follow: false,
+        },
+      }
+    : {}),
   alternates: {
     canonical: "/",
   },
@@ -53,8 +65,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1E0B3A",
-  colorScheme: "dark",
+  themeColor: "#180828",
+  colorScheme: "light",
 };
 
 export default function RootLayout({

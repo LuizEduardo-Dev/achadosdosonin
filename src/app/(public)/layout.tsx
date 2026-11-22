@@ -1,20 +1,15 @@
-import { getSiteSettings } from "@/lib/data/storefront";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
 import { PwaRegister } from "@/components/pwa-register";
+import { SiteFooter } from "@/components/site-footer";
 
-export default async function PublicLayout({
+export default function PublicLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const settings = await getSiteSettings();
-
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-bg text-text">
       <PwaRegister />
-      <SiteHeader whatsappGroupUrl={settings.whatsapp_group_url} />
-      <main className="flex-1">{children}</main>
+      <main className="flex flex-1 flex-col">{children}</main>
       <SiteFooter />
     </div>
   );

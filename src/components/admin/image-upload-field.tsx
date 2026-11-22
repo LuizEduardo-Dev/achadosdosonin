@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import { ImagePlus, Loader2, Upload, X } from "lucide-react";
+import { ImagePlus, Upload, X } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import {
   ACHADOS_STORAGE_BUCKET,
@@ -78,24 +78,26 @@ export function ImageUploadField({
   };
 
   return (
-    <div className="space-y-2">
-      <span className="block text-sm font-semibold text-text">
+    <div className="space-y-1.5">
+      <span className="block text-sm font-medium text-text">
         Imagem do achado *
       </span>
 
       <input type="hidden" name="image_path" value={value} />
 
-      <div className="rounded-2xl border border-border bg-surface-2/60 p-4">
+      <div className="rounded-lg border border-border bg-surface-2/60 p-4">
         {previewUrl ? (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-xl border border-border bg-bg">
-              <Image
-                src={previewUrl}
-                alt="Pré-visualização do achado"
-                fill
-                sizes="112px"
-                className="object-cover"
-              />
+            <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg border border-border bg-surface p-1.5">
+              <div className="relative h-full w-full">
+                <Image
+                  src={previewUrl}
+                  alt="Pré-visualização do achado"
+                  fill
+                  sizes="96px"
+                  className="object-contain"
+                />
+              </div>
             </div>
 
             <div className="flex flex-1 flex-col gap-2">
@@ -108,17 +110,13 @@ export function ImageUploadField({
                   disabled={uploading}
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  {uploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                  ) : (
-                    <Upload className="h-4 w-4" aria-hidden="true" />
-                  )}
+                  <Upload className="h-4 w-4" aria-hidden="true" />
                   <span>{uploading ? "Enviando..." : "Trocar imagem"}</span>
                 </Button>
 
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
                   disabled={uploading}
                   onClick={() => onChange("")}
@@ -134,20 +132,13 @@ export function ImageUploadField({
             type="button"
             disabled={uploading}
             onClick={() => fileInputRef.current?.click()}
-            className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-surface/60 px-4 py-7 text-center transition-colors hover:border-primary hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
+            className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-surface px-4 py-7 text-center transition-colors hover:border-link hover:bg-surface-2/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link disabled:opacity-60"
           >
-            {uploading ? (
-              <Loader2
-                className="h-7 w-7 animate-spin text-accent"
-                aria-hidden="true"
-              />
-            ) : (
-              <ImagePlus className="h-7 w-7 text-accent" aria-hidden="true" />
-            )}
-            <span className="text-sm font-semibold text-text">
+            <ImagePlus className="h-6 w-6 text-text-muted" aria-hidden="true" />
+            <span className="text-sm font-medium text-text">
               {uploading
                 ? "Comprimindo e enviando imagem..."
-                : "Toque para escolher uma imagem"}
+                : "Escolher imagem do produto"}
             </span>
             <span className="text-xs text-text-muted">
               JPEG, PNG ou WebP até 5 MB (redimensionada automaticamente)

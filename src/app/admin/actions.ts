@@ -40,6 +40,7 @@ function revalidateStorefrontAndAdmin() {
 function parseAchadoFormData(formData: FormData) {
   const priceRaw = String(formData.get("price") ?? "");
   const originalPriceRaw = String(formData.get("original_price") ?? "");
+  const priceNoteRaw = String(formData.get("price_note") ?? "").trim();
   const descriptionRaw = String(formData.get("description") ?? "").trim();
   const expiresAtRaw = String(formData.get("expires_at") ?? "").trim();
 
@@ -64,6 +65,7 @@ function parseAchadoFormData(formData: FormData) {
       originalPriceRaw.trim() && originalPriceCents === null
         ? -1
         : originalPriceCents,
+    price_note: priceNoteRaw || null,
     store: String(formData.get("store") ?? ""),
     affiliate_url: String(formData.get("affiliate_url") ?? ""),
     image_path: String(formData.get("image_path") ?? ""),

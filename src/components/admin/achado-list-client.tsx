@@ -18,7 +18,7 @@ import {
 } from "@/app/admin/actions";
 import { formatCurrencyBRL, formatDatePtBR } from "@/lib/format";
 import { resolveAchadoImageUrl } from "@/lib/supabase/storage";
-import { buttonClasses } from "@/components/ui/button";
+import { Button, buttonClasses } from "@/components/ui/button";
 
 type StatusFilter = "all" | AchadoStatus;
 
@@ -29,8 +29,8 @@ const STATUS_LABELS: Record<AchadoStatus, string> = {
 };
 
 const STATUS_BADGE_CLASSES: Record<AchadoStatus, string> = {
-  published: "bg-success/15 text-success border-success/40",
-  draft: "bg-accent/15 text-accent border-accent/40",
+  published: "bg-badge-bg text-badge-text border-badge-bg",
+  draft: "bg-surface-2 text-text border-border",
   archived: "bg-surface-2 text-text-muted border-border",
 };
 
@@ -40,6 +40,9 @@ interface AchadoListClientProps {
 
 export function AchadoListClient({ achados }: AchadoListClientProps) {
   const [filter, setFilter] = useState<StatusFilter>("all");
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(
+    null,
+  );
 
   const filtered = useMemo(() => {
     if (filter === "all") return achados;
@@ -58,7 +61,7 @@ export function AchadoListClient({ achados }: AchadoListClientProps) {
 
   return (
     <div className="space-y-4">
-      <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto pb-1">
+      <div className="no-scrollbar flex items-center gap-2 overflow-x-auto pb-1">
         {(
           [
             { key: "all", label: `Todos (${counts.all})` },
@@ -72,10 +75,10 @@ export function AchadoListClient({ achados }: AchadoListClientProps) {
             type="button"
             aria-pressed={filter === tab.key}
             onClick={() => setFilter(tab.key)}
-            className={`shrink-0 cursor-pointer rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:text-sm ${
+            className={`shrink-0 cursor-pointer rounded-full border px-3.5 py-1.5 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link ${
               filter === tab.key
-                ? "border-accent bg-accent text-bg font-bold"
-                : "border-border bg-surface text-text-muted hover:border-primary hover:text-text"
+                ? "border-ink bg-ink font-medium text-on-ink"
+                : "border-border bg-surface font-normal text-text hover:bg-surface-2"
             }`}
           >
             {tab.label}
@@ -84,16 +87,16 @@ export function AchadoListClient({ achados }: AchadoListClientProps) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-border bg-surface p-8 text-center">
-          <p className="text-base font-bold text-text">
-            Nenhum achado nessa categoria
+        <div className="rounded-lg border border-border bg-surface p-8 text-center">
+          <p className="text-base font-semibold text-text">
+            Nenhum achado nesta lista
           </p>
           <p className="mt-1 text-sm text-text-muted">
-            Crie seu primeiro achado para começar a preencher a vitrine.
+            Cadastre um novo achado para exibir na vitrine.
           </p>
           <Link
             href="/admin/achados/novo"
-            className={buttonClasses("accent", "sm", "mt-4 font-bold")}
+            className={buttonClasses("primary", "md", "mt-4")}
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
             <span>Novo achado</span>
@@ -101,132 +104,158 @@ export function AchadoListClient({ achados }: AchadoListClientProps) {
         </div>
       ) : (
         <ul className="space-y-3">
-          {filtered.map((item) => (
-            <li
-              key={item.id}
-              className="rounded-2xl border border-border bg-surface p-3.5 transition-colors hover:border-primary/80 sm:p-4"
-            >
-              <div className="flex gap-3">
-                <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-border bg-surface-2 sm:h-24 sm:w-24">
-                  <Image
-                    src={resolveAchadoImageUrl(item.image_path)}
-                    alt={item.title}
-                    fill
-                    sizes="96px"
-                    className="object-cover"
-                  />
-                </div>
+          {filtered.map((item) => {
+            const isConfirming = confirmingDeleteId === item.id;
 
-                <div className="min-w-0 flex-1 space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span
-                      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${STATUS_BADGE_CLASSES[item.status]}`}
-                    >
-                      {STATUS_LABELS[item.status]}
-                    </span>
-                    <span className="rounded-full border border-border bg-surface-2 px-2 py-0.5 text-[11px] font-medium text-text-muted">
-                      {item.store}
-                    </span>
-                    <span className="text-[11px] text-text-muted">
-                      {formatDatePtBR(item.created_at)}
-                    </span>
+            return (
+              <li
+                key={item.id}
+                className="rounded-lg border border-border bg-surface p-3.5 sm:p-4"
+              >
+                <div className="flex gap-3">
+                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-surface-2 bg-surface p-1 sm:h-24 sm:w-24">
+                    <div className="relative h-full w-full">
+                      <Image
+                        src={resolveAchadoImageUrl(item.image_path)}
+                        alt={item.title}
+                        fill
+                        sizes="96px"
+                        className="object-contain"
+                      />
+                    </div>
                   </div>
 
-                  <h2 className="line-clamp-2 text-sm font-bold text-text sm:text-base">
-                    {item.title}
-                  </h2>
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span
+                        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${STATUS_BADGE_CLASSES[item.status]}`}
+                      >
+                        {STATUS_LABELS[item.status]}
+                      </span>
+                      <span className="text-xs text-text-muted">
+                        {item.store}
+                      </span>
+                      <span className="text-xs text-text-muted" aria-hidden="true">
+                        ·
+                      </span>
+                      <span className="text-xs text-text-muted">
+                        {formatDatePtBR(item.created_at)}
+                      </span>
+                    </div>
 
-                  <div className="flex flex-wrap items-baseline gap-2">
-                    <span className="text-base font-extrabold tabular-nums text-accent">
-                      {formatCurrencyBRL(item.price_cents)}
-                    </span>
-                    {item.original_price_cents &&
-                      item.original_price_cents > item.price_cents && (
-                        <span className="text-xs tabular-nums text-text-muted line-through">
-                          {formatCurrencyBRL(item.original_price_cents)}
+                    <h2 className="line-clamp-2 text-sm font-medium text-text sm:text-base">
+                      {item.title}
+                    </h2>
+
+                    <div className="flex flex-wrap items-baseline gap-2">
+                      <span className="text-base font-semibold tabular-nums text-price">
+                        {formatCurrencyBRL(item.price_cents)}
+                      </span>
+                      {item.original_price_cents &&
+                        item.original_price_cents > item.price_cents && (
+                          <span className="text-xs tabular-nums text-text-muted line-through">
+                            {formatCurrencyBRL(item.original_price_cents)}
+                          </span>
+                        )}
+                      {item.price_note && (
+                        <span className="text-xs text-text-muted">
+                          ({item.price_note})
                         </span>
                       )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
-                <Link
-                  href={`/admin/achados/${item.id}/editar`}
-                  className={buttonClasses("secondary", "sm", "text-xs")}
-                >
-                  <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
-                  <span>Editar</span>
-                </Link>
-
-                {item.status !== "published" && (
-                  <form action={updateAchadoStatusAction}>
-                    <input type="hidden" name="id" value={item.id} />
-                    <input type="hidden" name="status" value="published" />
-                    <button
-                      type="submit"
-                      className={buttonClasses("primary", "sm", "text-xs")}
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-                      <span>Publicar</span>
-                    </button>
-                  </form>
-                )}
-
-                {item.status !== "draft" && (
-                  <form action={updateAchadoStatusAction}>
-                    <input type="hidden" name="id" value={item.id} />
-                    <input type="hidden" name="status" value="draft" />
-                    <button
-                      type="submit"
-                      className={buttonClasses("ghost", "sm", "text-xs")}
-                    >
-                      <FileEdit className="h-3.5 w-3.5" aria-hidden="true" />
-                      <span>Rascunho</span>
-                    </button>
-                  </form>
-                )}
-
-                {item.status !== "archived" && (
-                  <form action={updateAchadoStatusAction}>
-                    <input type="hidden" name="id" value={item.id} />
-                    <input type="hidden" name="status" value="archived" />
-                    <button
-                      type="submit"
-                      className={buttonClasses("ghost", "sm", "text-xs")}
-                    >
-                      <Archive className="h-3.5 w-3.5" aria-hidden="true" />
-                      <span>Arquivar</span>
-                    </button>
-                  </form>
-                )}
-
-                <form
-                  action={deleteAchadoAction}
-                  className="ml-auto"
-                  onSubmit={(event) => {
-                    if (
-                      !window.confirm(
-                        `Excluir permanentemente "${item.title}"?`,
-                      )
-                    ) {
-                      event.preventDefault();
-                    }
-                  }}
-                >
-                  <input type="hidden" name="id" value={item.id} />
-                  <button
-                    type="submit"
-                    aria-label={`Excluir ${item.title}`}
-                    className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-xl border border-danger/40 bg-transparent px-3 text-xs font-semibold text-danger transition-colors hover:bg-danger/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-surface-2 pt-3">
+                  <Link
+                    href={`/admin/achados/${item.id}/editar`}
+                    className={buttonClasses("secondary", "sm")}
                   >
-                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                    <span>Excluir</span>
-                  </button>
-                </form>
-              </div>
-            </li>
-          ))}
+                    <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span>Editar</span>
+                  </Link>
+
+                  {item.status !== "published" && (
+                    <form action={updateAchadoStatusAction}>
+                      <input type="hidden" name="id" value={item.id} />
+                      <input type="hidden" name="status" value="published" />
+                      <button
+                        type="submit"
+                        className={buttonClasses("primary", "sm")}
+                      >
+                        <CheckCircle2
+                          className="h-3.5 w-3.5"
+                          aria-hidden="true"
+                        />
+                        <span>Publicar</span>
+                      </button>
+                    </form>
+                  )}
+
+                  {item.status !== "draft" && (
+                    <form action={updateAchadoStatusAction}>
+                      <input type="hidden" name="id" value={item.id} />
+                      <input type="hidden" name="status" value="draft" />
+                      <button
+                        type="submit"
+                        className={buttonClasses("secondary", "sm")}
+                      >
+                        <FileEdit className="h-3.5 w-3.5" aria-hidden="true" />
+                        <span>Rascunho</span>
+                      </button>
+                    </form>
+                  )}
+
+                  {item.status !== "archived" && (
+                    <form action={updateAchadoStatusAction}>
+                      <input type="hidden" name="id" value={item.id} />
+                      <input type="hidden" name="status" value="archived" />
+                      <button
+                        type="submit"
+                        className={buttonClasses("secondary", "sm")}
+                      >
+                        <Archive className="h-3.5 w-3.5" aria-hidden="true" />
+                        <span>Arquivar</span>
+                      </button>
+                    </form>
+                  )}
+
+                  <div className="ml-auto flex items-center gap-2">
+                    {isConfirming ? (
+                      <>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setConfirmingDeleteId(null)}
+                        >
+                          Cancelar
+                        </Button>
+                        <form action={deleteAchadoAction}>
+                          <input type="hidden" name="id" value={item.id} />
+                          <button
+                            type="submit"
+                            className={buttonClasses("danger-solid", "sm")}
+                          >
+                            Confirmar exclusão
+                          </button>
+                        </form>
+                      </>
+                    ) : (
+                      <Button
+                        variant="danger-outline"
+                        size="sm"
+                        aria-label={`Excluir ${item.title}`}
+                        onClick={() => setConfirmingDeleteId(item.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        <span>Excluir</span>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

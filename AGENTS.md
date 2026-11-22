@@ -13,13 +13,15 @@ Idioma da interface: **pt-BR**. Código, nomes de variáveis, commits e comentá
 ### 2.1 MVP (este escopo é o que deve ser construído agora)
 
 1. **Vitrine pública** com os achados publicados, com:
-   - filtro por **loja** (ex.: Shopee, Mercado Livre, Amazon; lista vem dos dados);
+   - **busca por título** no cliente (ignora maiúsculas e acentos, sincronizada com `?q=`);
+   - filtro por **loja** (ex.: Shopee, Mercado Livre, Amazon; lista vem dos dados; esconder faixa se houver menos de 2 lojas);
    - **ordenação**: novidades (padrão), menor preço, maior preço;
-   - contador de achados exibidos;
-   - texto fixo: "Preços e disponibilidade podem mudar" e aviso de que os links podem gerar comissão ao curador.
+   - contador de achados exibidos junto à ordenação ativa (`Novidades · N achados`);
+   - observação curta opcional de preço (`price_note`, até 40 caracteres, ex.: "à vista no PIX", "em até 10x sem juros");
+   - aviso único no rodapé: "Preços e disponibilidade podem mudar. Links podem gerar comissão."
 2. **Área de admin** (`/admin`) para gerenciar achados e configurações.
 3. **Modal de boas-vindas** com **um único link** de grupo de WhatsApp.
-4. **Rotas por origem de tráfego** (`/tt`, `/ig`, `/wpp`) com aviso para abrir no navegador quando o site é aberto dentro de um navegador embutido (ver 2.5).
+4. **Rotas por origem de tráfego** (`/tt`, `/ig`, `/wpp`) com aviso discreto para abrir no navegador quando o site é aberto dentro de um navegador embutido (ver 2.5).
 5. **PWA** instalável (ver 2.6).
 
 ### 2.2 Fora do MVP (v2, NÃO implementar agora)
@@ -52,13 +54,53 @@ Ao projetar o modelo de dados e os componentes do MVP, **não bloquear** essas e
 - Não renderizar nas rotas `/admin`.
 - O link do grupo vem da configuração no banco (variável de ambiente como valor padrão), nunca hardcoded no componente.
 
-### 2.5 Rotas por origem e navegador embutido
-- Rotas aceitas: `/tt` (TikTok), `/ig` (Instagram), `/wpp` (WhatsApp). Todas renderizam a **mesma vitrine** da home. Manter uma lista fixa (whitelist) de origens; qualquer outro segmento retorna 404.
-- Motivo: navegadores embutidos (TikTok, Instagram, Facebook) costumam bloquear o login das lojas, e a compra trava para o visitante.
-- Detectar navegador embutido no cliente via `navigator.userAgent` (padrões como `TikTok`, `musical_ly`, `BytedanceWebview`, `Instagram`, `FBAN`, `FBAV`). Detecção é "melhor esforço" e pode falhar; sempre permitir "Continuar aqui mesmo assim".
-- Quando detectado, mostrar aviso dispensável com instruções curtas: tocar nos três pontinhos, escolher "Abrir no navegador", e um botão "Copiar link do site".
-- As instruções devem poder ser ajustadas por origem (o menu do TikTok e o do Instagram diferem).
-- Canonical e `og:url` sempre apontam para `/`.
+### 2.5 Navegador embutido (TikTok, Instagram, Facebook) e rotas por origem
+
+Rotas por origem
+- /tt, /ig e /wpp renderizam a MESMA vitrine da home (whitelist; outro segmento
+  retorna 404). A rota é só uma dica de origem. A detecção de navegador
+  embutido NÃO depende da rota: roda em qualquer página.
+
+Detecção
+- Feita no cliente, após a montagem (evitar erro de hidratação), com a
+  biblioteca `inapp-spy` (ou regex de user agent como alternativa). Detectar
+  pelo menos: tiktok, instagram, facebook, messenger.
+- Política por app, centralizada em UM arquivo de configuração:
+    tiktok: "strong" | instagram: "soft" | facebook: "soft" |
+    messenger: "soft" | demais: "off"
+- Sair do navegador embutido remove o aviso automaticamente (o user agent muda).
+
+Comportamento "strong" (TikTok)
+- Painel (bottom sheet) na primeira visita de cada sessão (sessionStorage),
+  com role="dialog", foco gerenciado e respeito a prefers-reduced-motion.
+- Conteúdo: título direto (ex.: "Abra no navegador para comprar sem travar"),
+  passo a passo curto ("toque nos três pontinhos no canto superior direito e
+  escolha Abrir no navegador"), seta apontando para o menu, botão "Copiar
+  link do site" (secundário, com contorno) e saída discreta
+  "Continuar aqui mesmo assim".
+- Android: botão primário "Abrir no navegador" que navega para
+  `intent:<URL atual completa, sem hash>#Intent;end`, preservando query/UTM.
+  Além disso, UMA tentativa automática por sessão (flag em sessionStorage)
+  com window.location.replace(intentLink) logo ao detectar; se a página
+  continuar visível após ~1,5 s, exibir o painel normalmente.
+- iOS: somente instruções manuais. Não implementar atalhos nem hacks de
+  esquemas de URL (não são confiáveis).
+
+Comportamento "soft" (Instagram, Facebook, Messenger)
+- Faixa discreta no topo (--surface-2, borda --border), dispensável, com o
+  mesmo texto curto e botão "Copiar link". Sem redirecionamento automático.
+  Se dispensada, não reaparece por 24 h (localStorage).
+
+Regras gerais
+- Nunca bloquear o conteúdo: sempre permitir continuar no navegador embutido.
+- O redirecionamento automático só leva à mesma URL, nunca a outra página.
+- O modal de boas-vindas só aparece depois que o painel/faixa for dispensado
+  ou se não houver navegador embutido (nunca dois overlays juntos).
+- Canonical e og:url sempre apontam para "/".
+- Em desenvolvimento/preview (nunca em produção), permitir simular com
+  ?debugInApp=tiktok|instagram|facebook, para testar sem o app real.
+- Limitação conhecida: não há saída programática confiável no iOS, e os apps
+  mudam o comportamento com o tempo; testar em Android e iPhone reais.
 
 ### 2.6 PWA
 - Instalável em Android/iOS/desktop.
@@ -67,7 +109,7 @@ Ao projetar o modelo de dados e os componentes do MVP, **não bloquear** essas e
   - Ícones em `public/icons/`: 192x192, 512x512 e versão **maskable**, mais `apple-touch-icon` 180x180 (iOS).
   - Service worker em `public/sw.js`, registrado no cliente. Se precisar de estratégias de cache mais avançadas, avaliar **Serwist** antes de escrever à mão.
   - Headers para `/sw.js` (`Content-Type: application/javascript`, `Cache-Control: no-cache, no-store, must-revalidate`). Definir em `next.config.ts`; se não surtir efeito no Netlify, usar `netlify.toml`.
-- Estratégia de cache: shell e assets estáticos em cache; lista de achados com *stale-while-revalidate*; **nunca** cachear `/admin`, rotas de API e respostas autenticadas.
+- Estratégia de cache: navegação/HTML com *network-first* (novos deploys chegam sem limpeza manual de cache, com fallback para página em cache ou `/offline` quando offline); assets versionados (`/_next/static/*`) em cache; nova versão do SW assume imediatamente (`skipWaiting` + `clients.claim`); **nunca** cachear `/admin`, rotas de API e respostas autenticadas.
 - Fallback offline simples (`/offline`).
 - PWA só funciona em HTTPS (ou `localhost`). Testar instalação com `next build && next start`, não só em `next dev`.
 - Validar com Lighthouse antes de entregar.
@@ -96,43 +138,48 @@ Não existe backend separado: toda a lógica de servidor roda no próprio Next.j
 
 ## 4. Design e paleta de cores
 
-Tema principal: **roxo escuro**. O site é *dark-first*, com roxo profundo como base e um acento quente para destacar preços e CTAs.
+Visual limpo, profissional e de varejo (inspirado em e-commerces brasileiros como KaBuM! e Terabyte Shop): **roxo-noite quase preto (`--ink`)** como identidade no topo e nas ações primárias, **creme e verde sálvia** como base neutra, e **cards brancos** para valorizar fotos de produto.
 
-### Por que essas combinações
-- **Análogas** (violeta, magenta, índigo) dão profundidade e gradientes harmoniosos.
-- **Complementar** (amarelo/âmbar) é o oposto do roxo no círculo cromático: cria o maior contraste para preço, selo de "oferta" e botões primários.
-- **Neutros com tom lavanda** (em vez de cinza puro) mantêm a coerência e evitam aspecto "sujo" sobre fundo roxo.
-- Verde do WhatsApp é usado **apenas** em CTAs do WhatsApp, por reconhecimento de marca.
-
-### Tokens (definir como CSS variables / `@theme` do Tailwind)
+### Tokens (definir como CSS variables / `@theme` do Tailwind — única fonte de verdade)
 
 | Token | Hex | Uso |
 |---|---|---|
-| `--bg` | `#14072B` | Fundo da página |
-| `--surface` | `#1E0B3A` | Cards, header, modal |
-| `--surface-2` | `#2E1065` | Hover de cards, inputs, seções destacadas |
-| `--border` | `#4C1D95` | Bordas e divisores |
-| `--primary` | `#7C3AED` | Botões secundários, links, foco |
-| `--primary-hover` | `#8B5CF6` | Hover do primário |
-| `--accent` | `#F5B83D` | Preços, selo de oferta, CTA principal |
-| `--accent-hover` | `#FBBF24` | Hover do acento |
-| `--highlight` | `#D946EF` | Gradientes, detalhes decorativos (usar com parcimônia) |
-| `--text` | `#F5F3FF` | Texto principal |
-| `--text-muted` | `#C4B5FD` | Texto secundário |
-| `--whatsapp` | `#25D366` | Botão do WhatsApp |
-| `--success` | `#22C55E` | Sucesso |
-| `--danger` | `#F43F5E` | Erro / exclusão |
+| `--bg` | `#F5F4EE` | Fundo da página (creme neutro) |
+| `--surface` | `#FFFFFF` | Cards, inputs, modais, rodapé |
+| `--surface-2` | `#ECEEE5` | Hover de botões secundários, aviso discreto, skeletons, divisor de imagem |
+| `--border` | `#DDE0D3` | Bordas e divisores |
+| `--ink` | `#180828` | Faixa do topo, botão primário, chip ativo, barra superior do admin |
+| `--ink-hover` | `#2B1347` | Hover do primário e elementos internos sobre `--ink` |
+| `--link` | `#5B3A8E` | Links, foco (`outline`), borda hover do card |
+| `--price` | `#1B6E45` | Preço atual em destaque |
+| `--badge-bg` | `#E0F0E6` | Fundo de selo de desconto e ícone do modal |
+| `--badge-text` | `#165A38` | Texto de selo de desconto e estados de sucesso |
+| `--text` | `#1C1A24` | Texto principal |
+| `--text-muted` | `#65656B` | Texto secundário, nome da loja, preço riscado, `price_note` |
+| `--on-ink` | `#F3EFF8` | Texto principal sobre `--ink` |
+| `--on-ink-muted` | `#C9BEDC` | Texto secundário sobre `--ink` |
+| `--accent-sage` | `#A9D8B8` | Selo "Curadoria diária" e detalhes discretos sobre `--ink` |
+| `--whatsapp` | `#25D366` | Botão do WhatsApp (uso exclusivo, com texto `#04361A`) |
+| `--danger` | `#C0392B` | Erro e ações destrutivas (contorno por padrão; sólido apenas na confirmação) |
+| `--success` | `#1B6E45` | Sucesso |
 
-Gradiente de marca sugerido: `linear-gradient(135deg, #2E1065 0%, #7C3AED 100%)`.
-
-### Regras
-- Contraste mínimo **WCAG AA** (4.5:1 para texto normal). Verifique qualquer combinação nova.
-- Texto sobre `--accent` deve ser escuro (`--bg`), nunca branco.
-- Nada de cores hardcoded em componentes: usar apenas os tokens.
-- `theme_color` do manifest = `--surface`; `background_color` = `--bg`.
-- Mobile-first. Testar em 360 px de largura.
+### Tipografia, raios e regras
+- **Fonte**: uma única família sans legível (`Plus Jakarta Sans` ou `Inter`) via `next/font`, pesos `400`, `500` e `600`.
+- **Letter-spacing**: normal (`0`) em textos de leitura; no máximo `-0.01em` em títulos grandes. Preços com `font-variant-numeric: tabular-nums`.
+- **Raios de borda**: `8px` em cards, inputs e botões; `999px` apenas em chips; `12px` no modal; `16px` nos cantos inferiores da faixa do topo.
+- **Botões**: primário sólido `--ink` (com parcimônia); secundário com contorno `1px --ink` (fundo transparente, hover `--surface-2`); WhatsApp sólido `#25D366` com texto `#04361A`; destrutivo com contorno `--danger` e sólido `--danger` somente na confirmação.
+- **Card de achado**: o card inteiro é um único `<a>` para o link de afiliado; apenas a borda externa `1px --border` (sem linha divisória abaixo da imagem nem contêineres aninhados com borda); imagem quadrada `1/1` com fundo branco e `object-fit: contain` + padding `8px`; linha de `price_note` com altura reservada para alinhamento; botão visual "Ver oferta" (`<span>`) com contorno `1px --ink`, fundo transparente e texto `--ink` (altura mínima `40px`, largura total), preenchendo com fundo `--ink` e texto branco no hover e focus-visible.
+- **Grade**: 2 colunas (`<640px`), 3 (`>=640px`), 4 (`>=1024px`), 5 (`>=1280px`), container `max-width: 1280px` com padding lateral `12px` (mobile) / `20px`.
+- **Contraste mínimo WCAG AA** (`4.5:1` para texto normal). Nada de cores hardcoded em componentes: usar apenas os tokens.
+- `theme_color` do manifest = `#180828` (`--ink`); `background_color` = `#F5F4EE` (`--bg`).
+- Mobile-first. Testar em `360px`, `768px`, `1024px` e `1280px`.
 - **Não** bloquear zoom (`user-scalable=no` / `maximum-scale=1` no viewport): prejudica acessibilidade.
 - Open Graph e Twitter Card completos (imagem 1200x630, título e descrição em pt-BR), pois o tráfego vem de links compartilhados.
+
+### O que evitar
+- **Proibido**: glow, sombras coloridas, gradientes, neon, magenta/rosa saturado.
+- Sombras apenas neutras e muito suaves (ex.: hover de card e modal).
+- Sem decoração desnecessária no admin; skeletons neutros (`--surface-2`) em vez de spinners coloridos.
 
 ## 5. Modelo de dados (MVP)
 
@@ -141,6 +188,7 @@ Tabelas mínimas no Postgres (Supabase). Toda alteração de schema deve vir com
 **`achados`**
 - `id` uuid (PK), `title` text, `description` text null
 - `price_cents` integer, `original_price_cents` integer null
+- `price_note` text null (observação curta de preço, até 40 caracteres, ex.: "à vista no PIX")
 - `store` text (nome da loja, ex.: "Shopee"), `affiliate_url` text
 - `image_path` text (caminho no Storage)
 - `status` text: `draft` | `published` | `archived`
@@ -167,16 +215,18 @@ Dinheiro: guardar em **centavos** (inteiro) e formatar com `Intl.NumberFormat("p
 
 ## 7. Variáveis de ambiente
 
-Manter `.env.example` atualizado (sem valores reais). Nunca commitar `.env.local`.
+Manter `.env.example` atualizado (sem valores reais) e validado com Zod em `src/lib/env.ts` (separando cliente e servidor, falhando cedo no build). Nunca commitar `.env.local`.
 
 ```
-NEXT_PUBLIC_SITE_URL=
-NEXT_PUBLIC_WHATSAPP_GROUP_URL=   # valor padrão; o valor efetivo fica em site_settings
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=        # somente servidor, nunca no cliente
-ADMIN_EMAIL=
+NEXT_PUBLIC_SITE_URL=             # [pública] URL base do site (canonical, OG, robots)
+NEXT_PUBLIC_SUPABASE_URL=         # [pública] URL do projeto Supabase
+NEXT_PUBLIC_SUPABASE_ANON_KEY=    # [pública] chave Publishable / anon (protegida por RLS)
+NEXT_PUBLIC_WHATSAPP_GROUP_URL=   # [pública, opcional] fallback; valor efetivo fica em site_settings
+NEXT_PUBLIC_NETLIFY_CONTEXT=      # [pública, opcional] preenchida via CONTEXT do Netlify
+ADMIN_EMAIL=                      # [segredo/servidor] e-mail único do admin
 ```
+
+> `SUPABASE_SERVICE_ROLE_KEY` não é necessária nem utilizada no MVP, pois todas as operações do admin rodam sob sessão autenticada no Supabase Auth + políticas RLS.
 
 ## 8. Estrutura de pastas sugerida
 
@@ -238,12 +288,14 @@ Antes de finalizar qualquer tarefa: rodar `npm run lint` e `npm run build` e gar
 
 ## 11. Definição de pronto
 
-- [ ] Funciona e é legível em 360 px de largura
-- [ ] Contraste AA nas cores usadas
-- [ ] Rotas admin protegidas no servidor e RLS ativo nas tabelas novas
+- [ ] Funciona e é legível em `360px`, `768px`, `1024px` e `1280px`
+- [ ] Contraste WCAG AA (`4.5:1`) em todos os pares de cores usados
+- [ ] Sem glow, sombras coloridas, gradientes, neon ou cores hardcoded nos componentes
+- [ ] Card de achado como link único (`<a>`), imagem `1/1` em fundo branco (`object-contain`), `price_note` opcional alinhado
+- [ ] Rotas admin protegidas no servidor e RLS ativo nas tabelas e migrations
 - [ ] Modal respeita frequência e acessibilidade, não aparece no admin e não sobrepõe o aviso de navegador embutido
 - [ ] `/tt`, `/ig`, `/wpp` funcionam; outros segmentos retornam 404
-- [ ] Filtro por loja e ordenação funcionando
+- [ ] Busca por título (`?q=`, sem acento/maiúsculas), filtro por loja e ordenação funcionando
 - [ ] Lighthouse: PWA instalável, Acessibilidade ≥ 90
 - [ ] `lint` e `build` sem erros
 - [ ] `.env.example` atualizado se houve nova variável

@@ -23,11 +23,11 @@ export function SettingsForm({ settings }: SettingsFormProps) {
   );
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form action={formAction} className="space-y-4">
       {state.error && (
         <div
           role="alert"
-          className="flex items-start gap-2 rounded-2xl border border-danger/60 bg-danger/10 p-3.5 text-sm text-text"
+          className="flex items-start gap-2 rounded-lg border border-danger bg-surface-2 p-3 text-sm text-danger"
         >
           <AlertCircle
             className="mt-0.5 h-4 w-4 shrink-0 text-danger"
@@ -40,10 +40,10 @@ export function SettingsForm({ settings }: SettingsFormProps) {
       {state.success && (
         <div
           role="status"
-          className="flex items-start gap-2 rounded-2xl border border-success/50 bg-success/10 p-3.5 text-sm text-text"
+          className="flex items-start gap-2 rounded-lg border border-badge-bg bg-badge-bg p-3 text-sm font-medium text-badge-text"
         >
           <CheckCircle2
-            className="mt-0.5 h-4 w-4 shrink-0 text-success"
+            className="mt-0.5 h-4 w-4 shrink-0 text-badge-text"
             aria-hidden="true"
           />
           <span>{state.success}</span>
@@ -53,7 +53,7 @@ export function SettingsForm({ settings }: SettingsFormProps) {
       <div className="space-y-1.5">
         <label
           htmlFor="settings-whatsapp"
-          className="block text-sm font-semibold text-text"
+          className="block text-sm font-medium text-text"
         >
           Link do grupo de WhatsApp
         </label>
@@ -65,7 +65,7 @@ export function SettingsForm({ settings }: SettingsFormProps) {
           placeholder="https://chat.whatsapp.com/..."
         />
         <p className="text-xs text-text-muted">
-          Usado no botão do cabeçalho e no modal de boas-vindas da vitrine.
+          Usado no botão do topo e no modal de boas-vindas da vitrine.
         </p>
         {state.fieldErrors?.whatsapp_group_url && (
           <p className="text-xs text-danger">
@@ -74,19 +74,20 @@ export function SettingsForm({ settings }: SettingsFormProps) {
         )}
       </div>
 
-      <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-border bg-surface-2/70 p-4">
+      <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-surface-2/60 p-3.5">
         <input
           type="checkbox"
           name="modal_enabled"
           defaultChecked={settings.modal_enabled}
-          className="mt-1 h-4 w-4 accent-accent"
+          className="mt-0.5 h-4 w-4 accent-ink"
         />
         <div>
-          <span className="block text-sm font-bold text-text">
+          <span className="block text-sm font-medium text-text">
             Modal de boas-vindas ativo
           </span>
           <span className="mt-0.5 block text-xs text-text-muted">
-            Quando ativado, o convite para o grupo do WhatsApp aparece para visitantes após 1,5 s (respeitando o intervalo de 24 h / 7 dias).
+            Exibe o convite para o grupo do WhatsApp após 1,5 s (com intervalo
+            de 24 h ao fechar ou 7 dias ao clicar).
           </span>
         </div>
       </label>
@@ -94,7 +95,7 @@ export function SettingsForm({ settings }: SettingsFormProps) {
       <div className="space-y-1.5">
         <label
           htmlFor="settings-modal-title"
-          className="block text-sm font-semibold text-text"
+          className="block text-sm font-medium text-text"
         >
           Título do modal *
         </label>
@@ -113,7 +114,7 @@ export function SettingsForm({ settings }: SettingsFormProps) {
       <div className="space-y-1.5">
         <label
           htmlFor="settings-modal-message"
-          className="block text-sm font-semibold text-text"
+          className="block text-sm font-medium text-text"
         >
           Mensagem do modal *
         </label>
@@ -134,10 +135,10 @@ export function SettingsForm({ settings }: SettingsFormProps) {
       <div className="flex justify-end border-t border-border pt-4">
         <Button
           type="submit"
-          variant="accent"
+          variant="primary"
           size="md"
           disabled={isPending}
-          className="w-full font-bold sm:w-auto"
+          className="w-full sm:w-auto"
         >
           <Save className="h-4 w-4" aria-hidden="true" />
           <span>{isPending ? "Salvando..." : "Salvar configurações"}</span>

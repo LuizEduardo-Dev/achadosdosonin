@@ -1,21 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #14072B;
-  --surface: #1E0B3A;
-  --surface-2: #2E1065;
-  --border: #4C1D95;
-  --primary: #7C3AED;
-  --primary-hover: #8B5CF6;
-  --accent: #F5B83D;
-  --accent-hover: #FBBF24;
-  --highlight: #D946EF;
-  --text: #F5F3FF;
-  --text-muted: #C4B5FD;
+  --bg: #F5F4EE;
+  --surface: #FFFFFF;
+  --surface-2: #ECEEE5;
+  --border: #DDE0D3;
+  --ink: #180828;
+  --ink-hover: #2B1347;
+  --link: #5B3A8E;
+  --price: #1B6E45;
+  --badge-bg: #E0F0E6;
+  --badge-text: #165A38;
+  --text: #1C1A24;
+  --text-muted: #65656B;
+  --on-ink: #F3EFF8;
+  --on-ink-muted: #C9BEDC;
+  --accent-sage: #A9D8B8;
   --whatsapp: #25D366;
-  --success: #22C55E;
-  --danger: #F43F5E;
-  --brand-gradient: linear-gradient(135deg, #2E1065 0%, #7C3AED 100%);
+  --whatsapp-text: #04361A;
+  --danger: #C0392B;
+  --success: #1B6E45;
+  --shadow-card-hover: 0 4px 14px rgba(28, 26, 36, 0.08);
+  --shadow-modal: 0 12px 32px rgba(28, 26, 36, 0.18);
 }
 
 @theme inline {
@@ -23,21 +29,26 @@
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-border: var(--border);
-  --color-primary: var(--primary);
-  --color-primary-hover: var(--primary-hover);
-  --color-accent: var(--accent);
-  --color-accent-hover: var(--accent-hover);
-  --color-highlight: var(--highlight);
+  --color-ink: var(--ink);
+  --color-ink-hover: var(--ink-hover);
+  --color-link: var(--link);
+  --color-price: var(--price);
+  --color-badge-bg: var(--badge-bg);
+  --color-badge-text: var(--badge-text);
   --color-text: var(--text);
   --color-text-muted: var(--text-muted);
+  --color-on-ink: var(--on-ink);
+  --color-on-ink-muted: var(--on-ink-muted);
+  --color-accent-sage: var(--accent-sage);
   --color-whatsapp: var(--whatsapp);
-  --color-success: var(--success);
+  --color-whatsapp-text: var(--whatsapp-text);
   --color-danger: var(--danger);
+  --color-success: var(--success);
   --font-sans: var(--font-plus-jakarta), ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
   background-color: var(--bg);
   color: var(--text);
 }
@@ -46,11 +57,20 @@ body {
   background-color: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
+  letter-spacing: 0;
   overflow-x: clip;
 }
 
-.bg-brand-gradient {
-  background-image: var(--brand-gradient);
+.card-hover-shadow {
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.card-hover-shadow:hover {
+  box-shadow: var(--shadow-card-hover);
+}
+
+.modal-shadow {
+  box-shadow: var(--shadow-modal);
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -74,20 +94,20 @@ body {
 @keyframes modalSlideUp {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.98);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
 .animate-modal-overlay {
-  animation: modalFadeIn 180ms ease-out both;
+  animation: modalFadeIn 160ms ease-out both;
 }
 
 .animate-modal-content {
-  animation: modalSlideUp 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: modalSlideUp 180ms ease-out both;
 }
 
 @media (prefers-reduced-motion: reduce) {

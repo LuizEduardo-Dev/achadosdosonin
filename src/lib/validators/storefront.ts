@@ -10,6 +10,7 @@ export const achadoSchema = z.object({
   description: z.string().trim().max(320).nullable(),
   price_cents: z.number().int().nonnegative(),
   original_price_cents: z.number().int().positive().nullable(),
+  price_note: z.string().trim().max(40).nullable(),
   store: z.string().trim().min(1).max(60),
   affiliate_url: z.string().url(),
   image_path: z.string().trim().min(1),

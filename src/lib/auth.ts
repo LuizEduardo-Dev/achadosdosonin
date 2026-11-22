@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
+import { getServerEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export function isAdminUser(user: User | null): boolean {
@@ -10,7 +11,7 @@ export function isAdminUser(user: User | null): boolean {
     return true;
   }
 
-  const allowedEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const allowedEmail = getServerEnv().ADMIN_EMAIL;
   if (allowedEmail && user.email?.toLowerCase() === allowedEmail) {
     return true;
   }

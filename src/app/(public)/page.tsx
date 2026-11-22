@@ -1,7 +1,8 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { getPublishedAchados, getSiteSettings } from "@/lib/data/storefront";
 import { StorefrontView } from "@/components/storefront-view";
-import { StorefrontOverlays } from "@/components/storefront-overlays";
+import { StorefrontSkeleton } from "@/components/storefront-skeleton";
 
 export const metadata: Metadata = {
   alternates: {
@@ -19,9 +20,8 @@ export default async function HomePage() {
   ]);
 
   return (
-    <>
-      <StorefrontView achados={achados} />
-      <StorefrontOverlays settings={settings} />
-    </>
+    <Suspense fallback={<StorefrontSkeleton />}>
+      <StorefrontView achados={achados} settings={settings} />
+    </Suspense>
   );
 }

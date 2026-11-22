@@ -13,20 +13,24 @@ export function StoreFilter({
   selectedStore,
   onSelectStore,
 }: StoreFilterProps) {
+  if (stores.length < 2) {
+    return null;
+  }
+
   return (
     <div
       role="group"
       aria-label={UI_COPY.filters.storeFilterLabel}
-      className="no-scrollbar flex items-center gap-1.5 overflow-x-auto pb-0.5 sm:gap-2"
+      className="no-scrollbar flex items-center gap-2 overflow-x-auto pb-0.5"
     >
       <button
         type="button"
         aria-pressed={selectedStore === null}
         onClick={() => onSelectStore(null)}
-        className={`shrink-0 cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:px-3.5 sm:py-2 sm:text-sm ${
+        className={`shrink-0 cursor-pointer rounded-full border px-3.5 py-1.5 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link ${
           selectedStore === null
-            ? "border-accent bg-accent text-bg"
-            : "border-border bg-surface text-text-muted hover:border-primary hover:bg-surface-2 hover:text-text"
+            ? "border-ink bg-ink font-medium text-on-ink"
+            : "border-border bg-surface font-normal text-text hover:bg-surface-2"
         }`}
       >
         {UI_COPY.filters.allStores}
@@ -40,10 +44,10 @@ export function StoreFilter({
             type="button"
             aria-pressed={isActive}
             onClick={() => onSelectStore(isActive ? null : store)}
-            className={`shrink-0 cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:px-3.5 sm:py-2 sm:text-sm ${
+            className={`shrink-0 cursor-pointer rounded-full border px-3.5 py-1.5 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link ${
               isActive
-                ? "border-accent bg-accent text-bg"
-                : "border-border bg-surface text-text-muted hover:border-primary hover:bg-surface-2 hover:text-text"
+                ? "border-ink bg-ink font-medium text-on-ink"
+                : "border-border bg-surface font-normal text-text hover:bg-surface-2"
             }`}
           >
             {store}

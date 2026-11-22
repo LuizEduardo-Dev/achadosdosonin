@@ -42,11 +42,11 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
   );
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form action={formAction} className="space-y-4">
       {state.error && (
         <div
           role="alert"
-          className="flex items-start gap-2 rounded-2xl border border-danger/60 bg-danger/10 p-3.5 text-sm text-text"
+          className="flex items-start gap-2 rounded-lg border border-danger bg-surface-2 p-3 text-sm text-danger"
         >
           <AlertCircle
             className="mt-0.5 h-4 w-4 shrink-0 text-danger"
@@ -63,7 +63,7 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
       />
 
       <div className="space-y-1.5">
-        <label htmlFor="achado-title" className="block text-sm font-semibold text-text">
+        <label htmlFor="achado-title" className="block text-sm font-medium text-text">
           Título do achado *
         </label>
         <Input
@@ -82,7 +82,7 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
       <div className="space-y-1.5">
         <label
           htmlFor="achado-description"
-          className="block text-sm font-semibold text-text"
+          className="block text-sm font-medium text-text"
         >
           Descrição curta{" "}
           <span className="font-normal text-text-muted">(opcional)</span>
@@ -92,7 +92,7 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
           name="description"
           maxLength={320}
           defaultValue={achado?.description ?? ""}
-          placeholder="Resumo rápido do diferencial da oferta..."
+          placeholder="Resumo rápido da oferta..."
         />
         {state.fieldErrors?.description && (
           <p className="text-xs text-danger">{state.fieldErrors.description}</p>
@@ -103,7 +103,7 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
         <div className="space-y-1.5">
           <label
             htmlFor="achado-price"
-            className="block text-sm font-semibold text-text"
+            className="block text-sm font-medium text-text"
           >
             Preço atual (R$) *
           </label>
@@ -125,7 +125,7 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
         <div className="space-y-1.5">
           <label
             htmlFor="achado-original-price"
-            className="block text-sm font-semibold text-text"
+            className="block text-sm font-medium text-text"
           >
             Preço original (R$){" "}
             <span className="font-normal text-text-muted">(opcional)</span>
@@ -145,11 +145,33 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
         </div>
       </div>
 
+      <div className="space-y-1.5">
+        <label
+          htmlFor="achado-price-note"
+          className="block text-sm font-medium text-text"
+        >
+          Observação do preço{" "}
+          <span className="font-normal text-text-muted">
+            (opcional, até 40 caracteres)
+          </span>
+        </label>
+        <Input
+          id="achado-price-note"
+          name="price_note"
+          maxLength={40}
+          defaultValue={achado?.price_note ?? ""}
+          placeholder="Ex.: à vista no PIX ou em até 10x sem juros"
+        />
+        {state.fieldErrors?.price_note && (
+          <p className="text-xs text-danger">{state.fieldErrors.price_note}</p>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <label
             htmlFor="achado-store"
-            className="block text-sm font-semibold text-text"
+            className="block text-sm font-medium text-text"
           >
             Loja *
           </label>
@@ -175,7 +197,7 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
         <div className="space-y-1.5">
           <label
             htmlFor="achado-status"
-            className="block text-sm font-semibold text-text"
+            className="block text-sm font-medium text-text"
           >
             Status *
           </label>
@@ -203,7 +225,7 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
       <div className="space-y-1.5">
         <label
           htmlFor="achado-affiliate-url"
-          className="block text-sm font-semibold text-text"
+          className="block text-sm font-medium text-text"
         >
           Link de afiliado *
         </label>
@@ -225,7 +247,7 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
       <div className="space-y-1.5">
         <label
           htmlFor="achado-expires-at"
-          className="block text-sm font-semibold text-text"
+          className="block text-sm font-medium text-text"
         >
           Data de expiração{" "}
           <span className="font-normal text-text-muted">(opcional)</span>
@@ -237,7 +259,7 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
           defaultValue={toDateTimeLocalValue(achado?.expires_at)}
         />
         <p className="text-xs text-text-muted">
-          Se definida, o achado deixa de aparecer automaticamente na vitrine após esse horário.
+          Se definida, o achado deixa de aparecer na vitrine após esse horário.
         </p>
         {state.fieldErrors?.expires_at && (
           <p className="text-xs text-danger">{state.fieldErrors.expires_at}</p>
@@ -253,10 +275,10 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
         </Link>
         <Button
           type="submit"
-          variant="accent"
+          variant="primary"
           size="md"
           disabled={isPending}
-          className="w-full font-bold sm:w-auto"
+          className="w-full sm:w-auto"
         >
           <Save className="h-4 w-4" aria-hidden="true" />
           <span>
@@ -264,7 +286,7 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
               ? "Salvando..."
               : achado
                 ? "Salvar alterações"
-                : "Publicar achado"}
+                : "Salvar achado"}
           </span>
         </Button>
       </div>

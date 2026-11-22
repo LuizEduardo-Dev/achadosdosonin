@@ -8,6 +8,7 @@ import {
   getExistingStoreSuggestions,
 } from "@/lib/data/admin";
 import { AchadoForm } from "@/components/admin/achado-form";
+import { buttonClasses } from "@/components/ui/button";
 
 interface EditAchadoPageProps {
   params: Promise<{ id: string }>;
@@ -31,27 +32,28 @@ async function EditAchadoFormLoader({ params }: EditAchadoPageProps) {
 export default function EditAchadoPage({ params }: EditAchadoPageProps) {
   return (
     <div className="mx-auto max-w-2xl space-y-5">
-      <div className="space-y-1">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold tracking-[-0.01em] text-text sm:text-2xl">
+            Editar achado
+          </h1>
+          <p className="text-sm text-text-muted">
+            Atualize preço, observação, status ou imagem desta oferta.
+          </p>
+        </div>
+
         <Link
           href="/admin/achados"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-text-muted hover:text-text"
+          className={buttonClasses("secondary", "sm")}
         >
-          <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-          <span>Voltar para achados</span>
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          <span>Voltar</span>
         </Link>
-        <h1 className="text-2xl font-extrabold tracking-tight text-text">
-          Editar achado
-        </h1>
-        <p className="text-sm text-text-muted">
-          Atualize as informações, preço, status ou imagem desta oferta.
-        </p>
       </div>
 
-      <div className="rounded-3xl border border-border bg-surface p-5 sm:p-6">
+      <div className="rounded-lg border border-border bg-surface p-5 sm:p-6">
         <Suspense
-          fallback={
-            <div className="h-96 animate-pulse rounded-2xl bg-surface-2" />
-          }
+          fallback={<div className="h-96 rounded-lg bg-surface-2" />}
         >
           <EditAchadoFormLoader params={params} />
         </Suspense>

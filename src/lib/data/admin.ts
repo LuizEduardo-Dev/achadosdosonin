@@ -4,22 +4,39 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const DEFAULT_STORE_SUGGESTIONS = ["Shopee", "Mercado Livre", "Amazon"];
 
+const ADMIN_SELECT_COLUMNS =
+  "id, title, description, price_cents, original_price_cents, price_note, store, affiliate_url, image_path, status, created_at, updated_at, expires_at";
+
+const ADMIN_SELECT_LEGACY_COLUMNS =
+  "id, title, description, price_cents, original_price_cents, store, affiliate_url, image_path, status, created_at, updated_at, expires_at";
+
 export async function getAdminAchados(): Promise<Achado[]> {
   const supabase = await createSupabaseServerClient();
   if (!supabase) return [];
 
   const { data, error } = await supabase
     .from("achados")
-    .select(
-      "id, title, description, price_cents, original_price_cents, store, affiliate_url, image_path, status, created_at, updated_at, expires_at",
-    )
+    .select(ADMIN_SELECT_COLUMNS)
     .order("created_at", { ascending: false });
 
-  if (error || !data) {
+  if (!error && data) {
+    return data as Achado[];
+  }
+
+  // Fallback if `price_note` migration has not been applied yet
+  const legacy = await supabase
+    .from("achados")
+    .select(ADMIN_SELECT_LEGACY_COLUMNS)
+    .order("created_at", { ascending: false });
+
+  if (legacy.error || !legacy.data) {
     return [];
   }
 
-  return data as Achado[];
+  return (legacy.data as Omit<Achado, "price_note">[]).map((row) => ({
+    ...row,
+    price_note: null,
+  }));
 }
 
 export async function getAdminAchadoById(id: string): Promise<Achado | null> {
@@ -28,17 +45,28 @@ export async function getAdminAchadoById(id: string): Promise<Achado | null> {
 
   const { data, error } = await supabase
     .from("achados")
-    .select(
-      "id, title, description, price_cents, original_price_cents, store, affiliate_url, image_path, status, created_at, updated_at, expires_at",
-    )
+    .select(ADMIN_SELECT_COLUMNS)
     .eq("id", id)
     .maybeSingle();
 
-  if (error || !data) {
+  if (!error && data) {
+    return data as Achado;
+  }
+
+  const legacy = await supabase
+    .from("achados")
+    .select(ADMIN_SELECT_LEGACY_COLUMNS)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (legacy.error || !legacy.data) {
     return null;
   }
 
-  return data as Achado;
+  return {
+    ...(legacy.data as Omit<Achado, "price_note">),
+    price_note: null,
+  };
 }
 
 export async function getAdminSiteSettings(): Promise<SiteSettings> {

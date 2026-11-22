@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MessageCircle, Sparkles, X } from "lucide-react";
+import { MessageCircle, X } from "lucide-react";
 import type { SiteSettings } from "@/types/achado";
 import { UI_COPY } from "@/lib/config";
 import { Button, buttonClasses } from "@/components/ui/button";
@@ -138,7 +138,7 @@ export function WelcomeModal({ settings, canOpen }: WelcomeModalProps) {
 
   return (
     <div
-      className="animate-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-bg/80 p-4 backdrop-blur-xs"
+      className="animate-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-text/60 p-4"
       onClick={(event) => {
         if (event.target === event.currentTarget) {
           closeModal("dismissed");
@@ -151,62 +151,55 @@ export function WelcomeModal({ settings, canOpen }: WelcomeModalProps) {
         aria-modal="true"
         aria-labelledby="welcome-modal-title"
         aria-describedby="welcome-modal-message"
-        className="animate-modal-content relative w-full max-w-md overflow-hidden rounded-3xl border border-border bg-surface p-6 shadow-2xl"
+        className="animate-modal-content modal-shadow relative w-full max-w-md rounded-xl border border-border bg-surface p-6"
       >
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-14 -right-14 h-36 w-36 rounded-full bg-primary/30 blur-3xl"
-        />
-
         <button
           type="button"
           onClick={() => closeModal("dismissed")}
           aria-label={UI_COPY.welcomeModal.closeAriaLabel}
-          className="absolute top-4 right-4 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-text-muted transition-colors hover:bg-surface-2 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="absolute top-3.5 right-3.5 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-2 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link"
         >
           <X className="h-5 w-5" aria-hidden="true" />
         </button>
 
-        <div className="relative">
-          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-gradient text-accent shadow-md">
-            <Sparkles className="h-6 w-6" aria-hidden="true" />
-          </div>
+        <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-full bg-badge-bg text-badge-text">
+          <MessageCircle className="h-5 w-5" aria-hidden="true" />
+        </div>
 
-          <h2
-            id="welcome-modal-title"
-            className="pr-8 text-xl font-extrabold leading-tight text-text sm:text-2xl"
+        <h2
+          id="welcome-modal-title"
+          className="pr-8 text-lg font-semibold leading-snug text-text sm:text-xl"
+        >
+          {settings.modal_title || UI_COPY.welcomeModal.defaultTitle}
+        </h2>
+
+        <p
+          id="welcome-modal-message"
+          className="mt-2 text-sm leading-relaxed text-text-muted"
+        >
+          {settings.modal_message || UI_COPY.welcomeModal.defaultMessage}
+        </p>
+
+        <div className="mt-5 flex flex-col gap-2.5">
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => closeModal("clicked_cta")}
+            className={buttonClasses("whatsapp", "md", "w-full font-semibold")}
           >
-            {settings.modal_title || UI_COPY.welcomeModal.defaultTitle}
-          </h2>
+            <MessageCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>{UI_COPY.welcomeModal.ctaLabel}</span>
+          </a>
 
-          <p
-            id="welcome-modal-message"
-            className="mt-2.5 text-sm leading-relaxed text-text-muted sm:text-base"
+          <Button
+            variant="secondary"
+            size="md"
+            className="w-full"
+            onClick={() => closeModal("dismissed")}
           >
-            {settings.modal_message || UI_COPY.welcomeModal.defaultMessage}
-          </p>
-
-          <div className="mt-6 flex flex-col gap-2.5">
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => closeModal("clicked_cta")}
-              className={buttonClasses("whatsapp", "lg", "w-full font-extrabold")}
-            >
-              <MessageCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
-              <span>{UI_COPY.welcomeModal.ctaLabel}</span>
-            </a>
-
-            <Button
-              variant="ghost"
-              size="md"
-              className="w-full"
-              onClick={() => closeModal("dismissed")}
-            >
-              {UI_COPY.welcomeModal.dismissLabel}
-            </Button>
-          </div>
+            {UI_COPY.welcomeModal.dismissLabel}
+          </Button>
         </div>
       </div>
     </div>

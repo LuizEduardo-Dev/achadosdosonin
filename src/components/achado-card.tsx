@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { ExternalLink, Store } from "lucide-react";
 import type { Achado } from "@/types/achado";
 import {
   calculateDiscountPercentage,
@@ -7,7 +6,6 @@ import {
 } from "@/lib/format";
 import { UI_COPY } from "@/lib/config";
 import { resolveAchadoImageUrl } from "@/lib/supabase/storage";
-import { buttonClasses } from "@/components/ui/button";
 
 interface AchadoCardProps {
   achado: Achado;
@@ -24,80 +22,63 @@ export function AchadoCard({ achado, priority = false }: AchadoCardProps) {
     achado.original_price_cents > achado.price_cents;
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-surface transition-colors hover:border-primary hover:bg-surface-2/80 sm:rounded-2xl">
-      <div className="relative aspect-square w-full overflow-hidden bg-surface-2">
-        <Image
-          src={resolveAchadoImageUrl(achado.image_path)}
-          alt={`${achado.title} — oferta em ${achado.store}`}
-          fill
-          sizes="(max-width: 767px) 33vw, 25vw"
-          priority={priority}
-          className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-        />
+    <a
+      href={achado.affiliate_url}
+      target="_blank"
+      rel="noopener noreferrer sponsored"
+      aria-label={`${achado.title} na ${achado.store} por ${formatCurrencyBRL(achado.price_cents)} ${UI_COPY.card.ctaAriaSuffix}`}
+      className="card-hover-shadow group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface text-left hover:border-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link"
+    >
+      <div className="relative aspect-square w-full bg-surface p-2">
+        <div className="relative h-full w-full">
+          <Image
+            src={resolveAchadoImageUrl(achado.image_path)}
+            alt={`${achado.title} — oferta em ${achado.store}`}
+            fill
+            sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, (max-width: 1279px) 25vw, 20vw"
+            priority={priority}
+            className="object-contain"
+          />
+        </div>
 
         {discountPercentage !== null && (
-          <span className="absolute top-1.5 left-1.5 inline-flex items-center rounded-md bg-accent px-1.5 py-0.5 text-[10px] font-extrabold leading-none tracking-tight text-bg shadow-sm sm:top-2.5 sm:left-2.5 sm:rounded-full sm:px-2.5 sm:py-1 sm:text-xs">
-            -{discountPercentage}%
-            <span className="hidden sm:inline">
-              &nbsp;{UI_COPY.card.discountSuffix}
-            </span>
+          <span className="absolute top-2 left-2 inline-flex items-center rounded-lg bg-badge-bg px-2 py-0.5 text-[11px] font-semibold leading-tight text-badge-text">
+            -{discountPercentage}% {UI_COPY.card.discountSuffix}
           </span>
         )}
+      </div>
 
-        <div className="absolute inset-x-1.5 bottom-1.5 flex sm:inset-x-2.5 sm:bottom-2.5">
-          <span className="inline-flex max-w-full items-center gap-1 rounded-md border border-border/80 bg-bg/90 px-1.5 py-0.5 text-[10px] font-semibold leading-tight text-text backdrop-blur-xs sm:gap-1.5 sm:rounded-full sm:px-2.5 sm:py-1 sm:text-xs">
-            <Store
-              className="hidden h-3 w-3 shrink-0 text-text-muted sm:inline-block"
-              aria-hidden="true"
-            />
-            <span className="truncate">{achado.store}</span>
+      <div className="flex flex-1 flex-col px-3 pt-1 pb-3">
+        <p className="truncate text-[11px] font-medium text-text-muted sm:text-xs">
+          {achado.store}
+        </p>
+
+        <h2 className="mt-1 line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-snug text-text">
+          {achado.title}
+        </h2>
+
+        <div className="mt-2.5 flex flex-col">
+          {hasOriginalPrice && achado.original_price_cents !== null ? (
+            <span className="h-4 text-xs font-normal leading-4 tabular-nums text-text-muted line-through">
+              {formatCurrencyBRL(achado.original_price_cents)}
+            </span>
+          ) : (
+            <span className="h-4" aria-hidden="true" />
+          )}
+
+          <span className="text-[18px] font-semibold leading-tight tabular-nums text-price sm:text-[20px]">
+            {formatCurrencyBRL(achado.price_cents)}
+          </span>
+
+          <span className="mt-0.5 min-h-[1.125rem] truncate text-[11px] leading-[1.125rem] text-text-muted sm:text-xs">
+            {achado.price_note?.trim() || "\u00A0"}
           </span>
         </div>
+
+        <span className="mt-3 flex min-h-10 w-full items-center justify-center rounded-lg border border-ink bg-transparent px-3 text-sm font-medium text-ink transition-colors duration-150 group-hover:bg-ink group-hover:text-on-ink group-focus-visible:bg-ink group-focus-visible:text-on-ink">
+          {UI_COPY.card.cta}
+        </span>
       </div>
-
-      <div className="flex flex-1 flex-col gap-2 p-2 sm:gap-3 sm:p-3.5">
-        <div className="space-y-1">
-          <h2 className="line-clamp-2 text-xs font-bold leading-snug text-text sm:text-sm">
-            {achado.title}
-          </h2>
-          {achado.description && (
-            <p className="hidden text-xs leading-relaxed text-text-muted sm:line-clamp-2">
-              {achado.description}
-            </p>
-          )}
-        </div>
-
-        <div className="mt-auto space-y-2 border-t border-border/60 pt-2 sm:space-y-2.5 sm:pt-3">
-          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-2">
-            {hasOriginalPrice && achado.original_price_cents !== null && (
-              <span className="text-[10px] font-medium leading-none tabular-nums text-text-muted line-through sm:order-2 sm:text-xs">
-                {formatCurrencyBRL(achado.original_price_cents)}
-              </span>
-            )}
-            <span className="text-sm font-extrabold leading-tight tracking-tight tabular-nums text-accent sm:order-1 sm:text-lg">
-              {formatCurrencyBRL(achado.price_cents)}
-            </span>
-          </div>
-
-          <a
-            href={achado.affiliate_url}
-            target="_blank"
-            rel="noopener noreferrer sponsored"
-            aria-label={`${UI_COPY.card.cta}: ${achado.title} na ${achado.store} ${UI_COPY.card.ctaAriaSuffix}`}
-            className={buttonClasses(
-              "accent",
-              "sm",
-              "min-h-8 w-full rounded-lg px-2 text-xs font-bold sm:min-h-10 sm:rounded-xl sm:px-3.5 sm:text-sm",
-            )}
-          >
-            <span className="truncate">{UI_COPY.card.cta}</span>
-            <ExternalLink
-              className="hidden h-3.5 w-3.5 shrink-0 sm:inline-block"
-              aria-hidden="true"
-            />
-          </a>
-        </div>
-      </div>
-    </article>
+    </a>
   );
 }
