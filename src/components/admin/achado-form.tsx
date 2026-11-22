@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
-import { AlertCircle, Save } from "lucide-react";
+import { AlertCircle, Loader2, Save } from "lucide-react";
 import type { Achado, AchadoStatus } from "@/types/achado";
 import {
   createAchadoAction,
@@ -60,7 +60,16 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
   const fieldErrors = state.fieldErrors;
 
   return (
-    <form action={formAction} noValidate className="space-y-4">
+    <form
+      action={formAction}
+      noValidate
+      onSubmit={(event) => {
+        if (isPending) {
+          event.preventDefault();
+        }
+      }}
+      className="space-y-4"
+    >
       {state.error && (
         <div
           role="alert"
@@ -322,7 +331,11 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
           disabled={isPending}
           className="w-full sm:w-auto"
         >
-          <Save className="h-4 w-4" aria-hidden="true" />
+          {isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          ) : (
+            <Save className="h-4 w-4" aria-hidden="true" />
+          )}
           <span>
             {isPending
               ? "Salvando..."

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { AlertCircle, CheckCircle2, Save } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Save } from "lucide-react";
 import type { SiteSettings } from "@/types/achado";
 import {
   updateSiteSettingsAction,
@@ -32,7 +32,16 @@ export function SettingsForm({ settings }: SettingsFormProps) {
   const fieldErrors = state.fieldErrors;
 
   return (
-    <form action={formAction} noValidate className="space-y-4">
+    <form
+      action={formAction}
+      noValidate
+      onSubmit={(event) => {
+        if (isPending) {
+          event.preventDefault();
+        }
+      }}
+      className="space-y-4"
+    >
       {state.error && (
         <div
           role="alert"
@@ -157,7 +166,11 @@ export function SettingsForm({ settings }: SettingsFormProps) {
           disabled={isPending}
           className="w-full sm:w-auto"
         >
-          <Save className="h-4 w-4" aria-hidden="true" />
+          {isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          ) : (
+            <Save className="h-4 w-4" aria-hidden="true" />
+          )}
           <span>{isPending ? "Salvando..." : "Salvar configurações"}</span>
         </Button>
       </div>

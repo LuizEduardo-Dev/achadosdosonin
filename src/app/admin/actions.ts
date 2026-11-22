@@ -203,38 +203,51 @@ export async function updateAchadoAction(
   redirect("/admin/achados?saved=updated");
 }
 
+export type SimpleActionResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
 export async function updateAchadoStatusAction(
-  formData: FormData,
-): Promise<void> {
+  id: string,
+  status: string,
+): Promise<SimpleActionResult> {
   await requireAdmin();
 
-  const parsed = updateAchadoStatusSchema.safeParse({
-    id: String(formData.get("id") ?? ""),
-    status: String(formData.get("status") ?? ""),
-  });
-
+  const parsed = updateAchadoStatusSchema.safeParse({ id, status });
   if (!parsed.success) {
-    return;
+    return { ok: false, error: "Dados inválidos para atualizar o status." };
   }
 
   const supabase = await createSupabaseServerClient();
-  await supabase
+  const { error } = await supabase
     .from("achados")
     .update({ status: parsed.data.status })
     .eq("id", parsed.data.id);
 
+  if (error) {
+    console.error("[updateAchadoStatusAction] Supabase update error:", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+    });
+    return {
+      ok: false,
+      error: mapSupabaseMutationError("atualizar o status do achado", error),
+    };
+  }
+
   revalidateStorefrontAndAdmin();
+  return { ok: true };
 }
 
-export async function deleteAchadoAction(formData: FormData): Promise<void> {
+export async function deleteAchadoAction(
+  id: string,
+): Promise<SimpleActionResult> {
   await requireAdmin();
 
-  const parsed = deleteAchadoSchema.safeParse({
-    id: String(formData.get("id") ?? ""),
-  });
-
+  const parsed = deleteAchadoSchema.safeParse({ id });
   if (!parsed.success) {
-    return;
+    return { ok: false, error: "Identificador de achado inválido." };
   }
 
   const supabase = await createSupabaseServerClient();
@@ -249,7 +262,19 @@ export async function deleteAchadoAction(formData: FormData): Promise<void> {
     .delete()
     .eq("id", parsed.data.id);
 
-  if (!error && existing?.image_path) {
+  if (error) {
+    console.error("[deleteAchadoAction] Supabase delete error:", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+    });
+    return {
+      ok: false,
+      error: mapSupabaseMutationError("excluir o achado", error),
+    };
+  }
+
+  if (existing?.image_path) {
     const path = existing.image_path.trim();
     if (
       path &&
@@ -257,11 +282,19 @@ export async function deleteAchadoAction(formData: FormData): Promise<void> {
       !path.startsWith("http://") &&
       !path.startsWith("https://")
     ) {
-      await supabase.storage.from(ACHADOS_STORAGE_BUCKET).remove([path]);
+      try {
+        await supabase.storage.from(ACHADOS_STORAGE_BUCKET).remove([path]);
+      } catch (storageErr) {
+        console.error(
+          "[deleteAchadoAction] Storage cleanup warning:",
+          storageErr,
+        );
+      }
     }
   }
 
   revalidateStorefrontAndAdmin();
+  return { ok: true };
 }
 
 export async function updateSiteSettingsAction(
