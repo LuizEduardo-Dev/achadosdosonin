@@ -206,6 +206,23 @@ export async function logoutAction(): Promise<void> {
   redirect("/admin/login");
 }
 
+function formatMutationError(
+  actionLabel: "criar" | "atualizar",
+  error: { code?: string; message?: string; details?: string },
+): string {
+  const msg = (error.message ?? "").toLowerCase();
+
+  if (error.code === "PGRST204" || msg.includes("price_note")) {
+    return "A coluna 'price_note' ainda não existe no banco. Rode a migration 20261122000001_add_price_note.sql no SQL Editor do Supabase.";
+  }
+
+  if (error.code === "42501" || msg.includes("row-level security")) {
+    return "Permissão negada pelo RLS. Confirme app_metadata.role = 'admin' e faça logout e login novamente.";
+  }
+
+  return `Não foi possível ${actionLabel} o achado. Tente novamente.`;
+}
+
 export async function createAchadoAction(
   _prevState: ActionState,
   formData: FormData,
@@ -228,9 +245,13 @@ export async function createAchadoAction(
   const { error } = await supabase.from("achados").insert(parsed.data);
 
   if (error) {
+    console.error("[createAchadoAction] Supabase insert error:", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+    });
     return {
-      error:
-        "Não foi possível criar o achado. Confira se sua conta possui permissão de admin (app_metadata.role = 'admin').",
+      error: formatMutationError("criar", error),
     };
   }
 
@@ -269,8 +290,13 @@ export async function updateAchadoAction(
     .eq("id", idCheck.data.id);
 
   if (error) {
+    console.error("[updateAchadoAction] Supabase update error:", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+    });
     return {
-      error: "Não foi possível atualizar o achado. Tente novamente.",
+      error: formatMutationError("atualizar", error),
     };
   }
 

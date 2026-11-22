@@ -39,7 +39,10 @@ const netlifyContextSchema = z
 
 export const clientEnvSchema = z.object({
   NEXT_PUBLIC_SITE_URL: httpUrlSchema,
-  NEXT_PUBLIC_SUPABASE_URL: httpUrlSchema,
+  NEXT_PUBLIC_SUPABASE_URL: httpUrlSchema.refine((value) => {
+    const pathname = new URL(value).pathname;
+    return pathname === "/" || pathname === "";
+  }, "must be the base project URL without a path (e.g. https://xxxx.supabase.co, without /rest/v1/)"),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z
     .string()
     .trim()
