@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { SITE_CONFIG } from "@/lib/config";
+import { isPreviewDeployment } from "@/lib/env";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -10,6 +11,8 @@ const plusJakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
+const previewDeployment = isPreviewDeployment();
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_CONFIG.url),
   title: {
@@ -17,6 +20,14 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_CONFIG.name}`,
   },
   description: SITE_CONFIG.description,
+  ...(previewDeployment
+    ? {
+        robots: {
+          index: false,
+          follow: false,
+        },
+      }
+    : {}),
   alternates: {
     canonical: "/",
   },

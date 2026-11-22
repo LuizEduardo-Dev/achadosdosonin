@@ -1,5 +1,5 @@
-const STATIC_CACHE = "sonin-links-static-v2";
-const PAGES_CACHE = "sonin-links-pages-v2";
+const STATIC_CACHE = "sonin-links-static-v3";
+const PAGES_CACHE = "sonin-links-pages-v3";
 const ALLOWED_CACHES = [STATIC_CACHE, PAGES_CACHE];
 
 const OFFLINE_URL = "/offline";
@@ -53,11 +53,14 @@ function isCacheableResponse(response) {
   return true;
 }
 
-function isStaticAsset(pathname) {
+function isVersionedAsset(pathname) {
+  // Next.js content-hashed build chunks are immutable per deploy
+  return pathname.startsWith("/_next/static/");
+}
+
+function isUnversionedPublicAsset(pathname) {
   return (
-    pathname.startsWith("/_next/static/") ||
     pathname.startsWith("/icons/") ||
-    pathname.startsWith("/images/") ||
     pathname === "/manifest.webmanifest" ||
     pathname === "/favicon.ico"
   );
@@ -96,8 +99,8 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 1. Static assets: cache-first
-  if (isStaticAsset(url.pathname)) {
+  // 1. Versioned Next.js build assets: cache-first (content-hashed filenames)
+  if (isVersionedAsset(url.pathname)) {
     event.respondWith(
       caches.open(STATIC_CACHE).then(async (cache) => {
         const cached = await cache.match(request);
@@ -115,15 +118,11 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 2. Public storefront pages: stale-while-revalidate with offline fallback
-  if (
-    request.mode === "navigate" &&
-    PUBLIC_STOREFRONT_PATHS.has(url.pathname)
-  ) {
+  // 2. Unversioned public icons/manifest: stale-while-revalidate
+  if (isUnversionedPublicAsset(url.pathname)) {
     event.respondWith(
-      caches.open(PAGES_CACHE).then(async (cache) => {
+      caches.open(STATIC_CACHE).then(async (cache) => {
         const cached = await cache.match(request);
-
         const networkFetch = fetch(request)
           .then((response) => {
             if (isCacheableResponse(response)) {
@@ -139,36 +138,42 @@ self.addEventListener("fetch", (event) => {
         }
 
         const networkResponse = await networkFetch;
-        if (networkResponse) {
-          return networkResponse;
-        }
-
-        const offlineFallback = await caches.match(OFFLINE_URL);
-        return (
-          offlineFallback ||
-          new Response("Você está sem conexão no momento.", {
-            status: 503,
-            headers: { "Content-Type": "text/plain; charset=utf-8" },
-          })
-        );
+        return networkResponse || Response.error();
       }),
     );
     return;
   }
 
-  // 3. Other public navigations: network-first with offline fallback
+  // 3. HTML navigations: network-first so new deploys arrive immediately without clearing cache
   if (request.mode === "navigate") {
+    const shouldCachePublicPage = PUBLIC_STOREFRONT_PATHS.has(url.pathname);
+
     event.respondWith(
-      fetch(request).catch(async () => {
-        const offlineFallback = await caches.match(OFFLINE_URL);
-        return (
-          offlineFallback ||
-          new Response("Você está sem conexão no momento.", {
-            status: 503,
-            headers: { "Content-Type": "text/plain; charset=utf-8" },
-          })
-        );
-      }),
+      fetch(request)
+        .then(async (networkResponse) => {
+          if (shouldCachePublicPage && isCacheableResponse(networkResponse)) {
+            const cache = await caches.open(PAGES_CACHE);
+            cache.put(request, networkResponse.clone());
+          }
+          return networkResponse;
+        })
+        .catch(async () => {
+          if (shouldCachePublicPage) {
+            const cached = await caches.match(request);
+            if (cached) {
+              return cached;
+            }
+          }
+
+          const offlineFallback = await caches.match(OFFLINE_URL);
+          return (
+            offlineFallback ||
+            new Response("Você está sem conexão no momento.", {
+              status: 503,
+              headers: { "Content-Type": "text/plain; charset=utf-8" },
+            })
+          );
+        }),
     );
   }
 });
