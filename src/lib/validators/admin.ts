@@ -15,6 +15,8 @@ export const loginSchema = z.object({
   password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres."),
 });
 
+export const MAX_ACHADO_CATEGORIES = 3;
+
 export const achadoMutationSchema = z.object({
   title: z
     .string()
@@ -38,6 +40,40 @@ export const achadoMutationSchema = z.object({
     .min(1, "Envie uma imagem para o achado."),
   status: achadoStatusSchema,
   expires_at: z.string().datetime().nullable(),
+  category_ids: z
+    .array(z.string().uuid("Departamento inválido."))
+    .max(
+      MAX_ACHADO_CATEGORIES,
+      `Selecione no máximo ${MAX_ACHADO_CATEGORIES} departamentos.`,
+    ),
+});
+
+export const categoryMutationSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, "O nome do departamento deve ter pelo menos 2 caracteres.")
+    .max(80, "O nome do departamento pode ter no máximo 80 caracteres."),
+  slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(2, "O slug deve ter pelo menos 2 caracteres.")
+    .max(80, "O slug pode ter no máximo 80 caracteres.")
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      "Use apenas letras minúsculas, números e hífens no slug.",
+    ),
+  sort_order: z
+    .number()
+    .int("A ordem deve ser um número inteiro.")
+    .min(0, "A ordem deve ser 0 ou maior.")
+    .max(9999, "A ordem deve ser no máximo 9999."),
+  is_active: z.boolean(),
+});
+
+export const deleteCategorySchema = z.object({
+  id: z.string().uuid("Identificador de departamento inválido."),
 });
 
 export const updateAchadoStatusSchema = z.object({

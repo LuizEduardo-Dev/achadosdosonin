@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { connection } from "next/server";
 import { CheckCircle2, Plus } from "lucide-react";
-import { getAdminAchados } from "@/lib/data/admin";
+import { getAdminAchados, getAdminCategories } from "@/lib/data/admin";
 import { AchadoListClient } from "@/components/admin/achado-list-client";
 import { buttonClasses } from "@/components/ui/button";
 
@@ -12,8 +12,9 @@ interface AdminAchadosPageProps {
 
 async function AchadosContent({ searchParams }: AdminAchadosPageProps) {
   await connection();
-  const [achados, resolvedParams] = await Promise.all([
+  const [achados, categories, resolvedParams] = await Promise.all([
     getAdminAchados(),
+    getAdminCategories(),
     searchParams,
   ]);
 
@@ -58,7 +59,7 @@ async function AchadosContent({ searchParams }: AdminAchadosPageProps) {
         </div>
       )}
 
-      <AchadoListClient achados={achados} />
+      <AchadoListClient achados={achados} categories={categories} />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { connection } from "next/server";
 import { ArrowLeft } from "lucide-react";
 import {
   getAdminAchadoById,
+  getAdminCategories,
   getExistingStoreSuggestions,
 } from "@/lib/data/admin";
 import { AchadoForm } from "@/components/admin/achado-form";
@@ -17,16 +18,23 @@ interface EditAchadoPageProps {
 async function EditAchadoFormLoader({ params }: EditAchadoPageProps) {
   await connection();
   const { id } = await params;
-  const [achado, storeSuggestions] = await Promise.all([
+  const [achado, storeSuggestions, categories] = await Promise.all([
     getAdminAchadoById(id),
     getExistingStoreSuggestions(),
+    getAdminCategories(),
   ]);
 
   if (!achado) {
     notFound();
   }
 
-  return <AchadoForm achado={achado} storeSuggestions={storeSuggestions} />;
+  return (
+    <AchadoForm
+      achado={achado}
+      storeSuggestions={storeSuggestions}
+      categories={categories}
+    />
+  );
 }
 
 export default function EditAchadoPage({ params }: EditAchadoPageProps) {

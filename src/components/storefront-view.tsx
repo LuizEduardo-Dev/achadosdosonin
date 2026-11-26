@@ -3,10 +3,16 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { MessageCircle, Search, Tag, X } from "lucide-react";
-import type { Achado, SiteSettings, TrafficSource } from "@/types/achado";
+import { Menu, MessageCircle, Search, Tag, X } from "lucide-react";
+import type {
+  Achado,
+  Category,
+  SiteSettings,
+  TrafficSource,
+} from "@/types/achado";
 import { SITE_CONFIG, UI_COPY } from "@/lib/config";
 import { AchadoCard } from "@/components/achado-card";
+import { DepartmentsDrawer } from "@/components/departments-drawer";
 import { StoreFilter } from "@/components/store-filter";
 import { StorefrontOverlays } from "@/components/storefront-overlays";
 import { WhatsAppLink } from "@/components/whatsapp-link";
@@ -20,36 +26,63 @@ function normalizeForSearch(value: string): string {
     .trim();
 }
 
+function syncUrlSearchParams(nextQuery: string, nextStore: string | null): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const url = new URL(window.location.href);
+  const trimmedQuery = nextQuery.trim();
+
+  if (trimmedQuery) {
+    url.searchParams.set("q", trimmedQuery);
+  } else {
+    url.searchParams.delete("q");
+  }
+
+  if (nextStore) {
+    url.searchParams.set("loja", nextStore);
+  } else {
+    url.searchParams.delete("loja");
+  }
+
+  window.history.replaceState(null, "", url.pathname + url.search);
+}
+
 interface StorefrontViewProps {
   achados: Achado[];
+  categories: Category[];
   settings: SiteSettings;
   source?: TrafficSource;
+  activeCategory?: Category;
 }
 
 export function StorefrontView({
   achados,
+  categories,
   settings,
   source,
+  activeCategory,
 }: StorefrontViewProps) {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
-  const [selectedStore, setSelectedStore] = useState<string | null>(null);
+  const [selectedStore, setSelectedStore] = useState<string | null>(() => {
+    const storeParam = searchParams.get("loja")?.trim();
+    return storeParam || null;
+  });
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
+  const drawerId = "departments-drawer";
   const whatsappUrl = settings.whatsapp_group_url.trim();
 
   const handleQueryChange = (nextValue: string) => {
     setQuery(nextValue);
+    syncUrlSearchParams(nextValue, selectedStore);
+  };
 
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      const trimmed = nextValue.trim();
-      if (trimmed) {
-        url.searchParams.set("q", trimmed);
-      } else {
-        url.searchParams.delete("q");
-      }
-      window.history.replaceState(null, "", url.pathname + url.search);
-    }
+  const handleStoreChange = (nextStore: string | null) => {
+    setSelectedStore(nextStore);
+    syncUrlSearchParams(query, nextStore);
   };
 
   const stores = useMemo(() => {
@@ -66,7 +99,7 @@ export function StorefrontView({
 
   const normalizedQuery = useMemo(() => normalizeForSearch(query), [query]);
 
-  const filteredAndSortedAchados = useMemo(() => {
+  const filteredAchados = useMemo(() => {
     const filtered = achados.filter((item) => {
       if (selectedStore && item.store !== selectedStore) {
         return false;
@@ -87,30 +120,44 @@ export function StorefrontView({
   }, [achados, selectedStore, normalizedQuery]);
 
   const hasActiveFilter = Boolean(selectedStore || normalizedQuery);
-  const count = filteredAndSortedAchados.length;
+  const count = filteredAchados.length;
   const countLabel = `${count} ${count === 1 ? "achado" : "achados"}`;
 
   const clearAllFilters = () => {
     setSelectedStore(null);
-    handleQueryChange("");
+    setQuery("");
+    syncUrlSearchParams("", null);
   };
 
   return (
     <div className="flex flex-1 flex-col">
       <header className="rounded-b-2xl bg-ink text-on-ink">
-        <div className="mx-auto w-full max-w-[1280px] px-3 py-4 sm:px-5 sm:py-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <Link
-              href="/"
-              className="flex min-w-0 items-center gap-2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-sage"
-            >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ink-hover text-accent-sage">
-                <Tag className="h-4 w-4" aria-hidden="true" />
-              </span>
-              <span className="truncate text-base font-semibold text-on-ink sm:text-lg">
-                {SITE_CONFIG.name}
-              </span>
-            </Link>
+        <div className="mx-auto w-full max-w-[1280px] px-3 py-2.5 sm:px-5 sm:py-3">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3">
+            <div className="order-1 flex min-w-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setDrawerOpen(true)}
+                aria-label={UI_COPY.header.menuOpenAriaLabel}
+                aria-expanded={drawerOpen}
+                aria-controls={drawerId}
+                className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg text-on-ink transition-colors hover:bg-ink-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-sage"
+              >
+                <Menu className="h-5 w-5" aria-hidden="true" />
+              </button>
+
+              <Link
+                href="/"
+                className="flex min-w-0 items-center gap-2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-sage"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ink-hover text-accent-sage">
+                  <Tag className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <span className="truncate text-base font-semibold text-on-ink sm:text-lg">
+                  {SITE_CONFIG.name}
+                </span>
+              </Link>
+            </div>
 
             {whatsappUrl && (
               <WhatsAppLink
@@ -157,28 +204,32 @@ export function StorefrontView({
               </div>
             </div>
           </div>
-
-          <div className="mt-4 border-t border-ink-hover pt-3.5 sm:mt-5 sm:pt-4">
-            <p className="text-xs font-medium text-accent-sage">
-              {UI_COPY.hero.badge}
-            </p>
-            <h1 className="mt-1 text-xl font-semibold tracking-[-0.01em] text-on-ink sm:text-2xl">
-              {UI_COPY.hero.title}
-            </h1>
-            <p className="mt-1 text-sm text-on-ink-muted">
-              {UI_COPY.hero.subtitle}
-            </p>
-          </div>
         </div>
       </header>
+
+      <DepartmentsDrawer
+        open={drawerOpen}
+        drawerId={drawerId}
+        categories={categories}
+        activeCategorySlug={activeCategory?.slug ?? null}
+        onClose={() => setDrawerOpen(false)}
+      />
 
       <StorefrontOverlays settings={settings} source={source} />
 
       <div className="mx-auto w-full max-w-[1280px] flex-1 space-y-4 px-3 py-4 sm:px-5 sm:py-6">
+        {activeCategory ? (
+          <h1 className="text-xl font-semibold tracking-[-0.01em] text-text sm:text-2xl">
+            {activeCategory.name}
+          </h1>
+        ) : (
+          <h1 className="sr-only">Achados</h1>
+        )}
+
         <StoreFilter
           stores={stores}
           selectedStore={selectedStore}
-          onSelectStore={setSelectedStore}
+          onSelectStore={handleStoreChange}
         />
 
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -186,15 +237,23 @@ export function StorefrontView({
             aria-live="polite"
             className="text-sm font-medium text-text-muted"
           >
+            {activeCategory && (
+              <>
+                <span className="text-text">{activeCategory.name}</span>
+                <span className="mx-1.5" aria-hidden="true">
+                  ·
+                </span>
+              </>
+            )}
             <span>{countLabel}</span>
             {selectedStore && <span> em {selectedStore}</span>}
           </p>
         </div>
 
-        {filteredAndSortedAchados.length > 0 ? (
+        {filteredAchados.length > 0 ? (
           <section aria-label="Grade de achados">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
-              {filteredAndSortedAchados.map((achado, index) => (
+              {filteredAchados.map((achado, index) => (
                 <AchadoCard
                   key={achado.id}
                   achado={achado}

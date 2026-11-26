@@ -1,5 +1,20 @@
 export type AchadoStatus = "draft" | "published" | "archived";
 
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AchadoCategoryLink {
+  achado_id: string;
+  category_id: string;
+}
+
 export interface Achado {
   id: string;
   title: string;
@@ -14,6 +29,7 @@ export interface Achado {
   created_at: string;
   updated_at: string;
   expires_at: string | null;
+  category_ids?: string[];
 }
 
 export interface SiteSettings {

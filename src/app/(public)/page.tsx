@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { getPublishedAchados, getSiteSettings } from "@/lib/data/storefront";
+import { getPublicStorefrontData } from "@/lib/data/storefront";
 import { StorefrontView } from "@/components/storefront-view";
 import { StorefrontSkeleton } from "@/components/storefront-skeleton";
 
@@ -16,14 +16,16 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [achados, settings] = await Promise.all([
-    getPublishedAchados(),
-    getSiteSettings(),
-  ]);
+  const { achados, drawerCategories, settings } =
+    await getPublicStorefrontData();
 
   return (
     <Suspense fallback={<StorefrontSkeleton />}>
-      <StorefrontView achados={achados} settings={settings} />
+      <StorefrontView
+        achados={achados}
+        categories={drawerCategories}
+        settings={settings}
+      />
     </Suspense>
   );
 }

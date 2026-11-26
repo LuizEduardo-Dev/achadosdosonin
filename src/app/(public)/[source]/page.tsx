@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { isValidTrafficSource } from "@/lib/config";
-import { getPublishedAchados, getSiteSettings } from "@/lib/data/storefront";
+import { getPublicStorefrontData } from "@/lib/data/storefront";
 import { StorefrontView } from "@/components/storefront-view";
 import { StorefrontSkeleton } from "@/components/storefront-skeleton";
 
@@ -30,14 +30,17 @@ export default async function SourceStorefrontPage({
     notFound();
   }
 
-  const [achados, settings] = await Promise.all([
-    getPublishedAchados(),
-    getSiteSettings(),
-  ]);
+  const { achados, drawerCategories, settings } =
+    await getPublicStorefrontData();
 
   return (
     <Suspense fallback={<StorefrontSkeleton />}>
-      <StorefrontView achados={achados} settings={settings} source={source} />
+      <StorefrontView
+        achados={achados}
+        categories={drawerCategories}
+        settings={settings}
+        source={source}
+      />
     </Suspense>
   );
 }

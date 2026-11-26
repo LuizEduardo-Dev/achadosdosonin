@@ -28,17 +28,15 @@ export const WHATSAPP_LINK_CONFIG = {
 
 export const UI_COPY = {
   header: {
+    menuOpenAriaLabel: "Abrir menu de departamentos",
+    menuCloseAriaLabel: "Fechar menu de departamentos",
+    allDealsLabel: "Todos os achados",
+    departmentsHeading: "Departamentos",
     whatsappCta: "Grupo VIP",
     whatsappAriaLabel: "Entrar no grupo de ofertas no WhatsApp",
     searchPlaceholder: "Buscar achados por nome...",
     searchAriaLabel: "Buscar achados por título",
     clearSearchAriaLabel: "Limpar busca",
-  },
-  hero: {
-    badge: "Curadoria diária",
-    title: "Descontos reais, garimpados todo dia",
-    subtitle:
-      "Achados conferidos a dedo nas maiores lojas — preço baixo de verdade, direto no link.",
   },
   filters: {
     allStores: "Todas",

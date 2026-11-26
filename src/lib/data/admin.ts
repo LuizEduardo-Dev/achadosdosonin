@@ -1,4 +1,9 @@
-import type { Achado, SiteSettings } from "@/types/achado";
+import type {
+  Achado,
+  AchadoCategoryLink,
+  Category,
+  SiteSettings,
+} from "@/types/achado";
 import { SITE_CONFIG, UI_COPY } from "@/lib/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -10,32 +15,67 @@ const ADMIN_SELECT_COLUMNS =
 const ADMIN_SELECT_LEGACY_COLUMNS =
   "id, title, description, price_cents, original_price_cents, store, affiliate_url, image_path, status, created_at, updated_at, expires_at";
 
-export async function getAdminAchados(): Promise<Achado[]> {
+export async function getAdminCategories(): Promise<Category[]> {
   const supabase = await createSupabaseServerClient();
   if (!supabase) return [];
 
   const { data, error } = await supabase
-    .from("achados")
-    .select(ADMIN_SELECT_COLUMNS)
-    .order("created_at", { ascending: false });
+    .from("categories")
+    .select("id, name, slug, sort_order, is_active, created_at, updated_at")
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true });
 
-  if (!error && data) {
-    return data as Achado[];
-  }
-
-  // Fallback if `price_note` migration has not been applied yet
-  const legacy = await supabase
-    .from("achados")
-    .select(ADMIN_SELECT_LEGACY_COLUMNS)
-    .order("created_at", { ascending: false });
-
-  if (legacy.error || !legacy.data) {
+  if (error || !data) {
     return [];
   }
 
-  return (legacy.data as Omit<Achado, "price_note">[]).map((row) => ({
+  return data as Category[];
+}
+
+export async function getAdminAchados(): Promise<Achado[]> {
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return [];
+
+  const [primary, linksResult] = await Promise.all([
+    supabase
+      .from("achados")
+      .select(ADMIN_SELECT_COLUMNS)
+      .order("created_at", { ascending: false }),
+    supabase.from("achado_categories").select("achado_id, category_id"),
+  ]);
+
+  let rows: Achado[] = [];
+  if (!primary.error && primary.data) {
+    rows = primary.data as Achado[];
+  } else {
+    // Fallback if `price_note` migration has not been applied yet
+    const legacy = await supabase
+      .from("achados")
+      .select(ADMIN_SELECT_LEGACY_COLUMNS)
+      .order("created_at", { ascending: false });
+
+    if (legacy.error || !legacy.data) {
+      return [];
+    }
+
+    rows = (legacy.data as Omit<Achado, "price_note">[]).map((row) => ({
+      ...row,
+      price_note: null,
+    }));
+  }
+
+  const categoriesByAchado = new Map<string, string[]>();
+  if (!linksResult.error && Array.isArray(linksResult.data)) {
+    for (const link of linksResult.data as AchadoCategoryLink[]) {
+      const current = categoriesByAchado.get(link.achado_id) ?? [];
+      current.push(link.category_id);
+      categoriesByAchado.set(link.achado_id, current);
+    }
+  }
+
+  return rows.map((row) => ({
     ...row,
-    price_note: null,
+    category_ids: categoriesByAchado.get(row.id) ?? [],
   }));
 }
 
@@ -43,29 +83,48 @@ export async function getAdminAchadoById(id: string): Promise<Achado | null> {
   const supabase = await createSupabaseServerClient();
   if (!supabase) return null;
 
-  const { data, error } = await supabase
-    .from("achados")
-    .select(ADMIN_SELECT_COLUMNS)
-    .eq("id", id)
-    .maybeSingle();
+  const [primary, linksResult] = await Promise.all([
+    supabase
+      .from("achados")
+      .select(ADMIN_SELECT_COLUMNS)
+      .eq("id", id)
+      .maybeSingle(),
+    supabase
+      .from("achado_categories")
+      .select("category_id")
+      .eq("achado_id", id),
+  ]);
 
-  if (!error && data) {
-    return data as Achado;
+  let item: Achado | null = null;
+  if (!primary.error && primary.data) {
+    item = primary.data as Achado;
+  } else {
+    const legacy = await supabase
+      .from("achados")
+      .select(ADMIN_SELECT_LEGACY_COLUMNS)
+      .eq("id", id)
+      .maybeSingle();
+
+    if (legacy.error || !legacy.data) {
+      return null;
+    }
+
+    item = {
+      ...(legacy.data as Omit<Achado, "price_note">),
+      price_note: null,
+    };
   }
 
-  const legacy = await supabase
-    .from("achados")
-    .select(ADMIN_SELECT_LEGACY_COLUMNS)
-    .eq("id", id)
-    .maybeSingle();
-
-  if (legacy.error || !legacy.data) {
-    return null;
-  }
+  const categoryIds =
+    !linksResult.error && Array.isArray(linksResult.data)
+      ? linksResult.data.map(
+          (row) => (row as { category_id: string }).category_id,
+        )
+      : [];
 
   return {
-    ...(legacy.data as Omit<Achado, "price_note">),
-    price_note: null,
+    ...item,
+    category_ids: categoryIds,
   };
 }
 

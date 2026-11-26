@@ -12,7 +12,9 @@ import {
 } from "@/lib/errors";
 import {
   achadoMutationSchema,
+  categoryMutationSchema,
   deleteAchadoSchema,
+  deleteCategorySchema,
   loginSchema,
   siteSettingsMutationSchema,
   updateAchadoStatusSchema,
@@ -30,8 +32,11 @@ function revalidateStorefrontAndAdmin() {
   revalidatePath("/tt");
   revalidatePath("/ig");
   revalidatePath("/wpp");
+  revalidatePath("/c/[slug]", "page");
+  revalidatePath("/grupo");
   revalidatePath("/admin");
   revalidatePath("/admin/achados");
+  revalidatePath("/admin/departamentos");
   revalidatePath("/admin/configuracoes");
 }
 
@@ -50,6 +55,12 @@ function parseAchadoFormData(formData: FormData) {
       : parsedDate.toISOString();
   }
 
+  const rawCategoryIds = formData
+    .getAll("category_ids")
+    .map((value) => String(value).trim())
+    .filter(Boolean);
+  const uniqueCategoryIds = Array.from(new Set(rawCategoryIds));
+
   return achadoMutationSchema.safeParse({
     title: String(formData.get("title") ?? ""),
     description: descriptionRaw || null,
@@ -58,7 +69,77 @@ function parseAchadoFormData(formData: FormData) {
     image_path: String(formData.get("image_path") ?? ""),
     status: String(formData.get("status") ?? "draft"),
     expires_at: expiresAtIso,
+    category_ids: uniqueCategoryIds,
   });
+}
+
+function parseCategoryFormData(formData: FormData) {
+  const sortOrderRaw = String(formData.get("sort_order") ?? "0").trim();
+  const parsedSortOrder = sortOrderRaw === "" ? 0 : Number(sortOrderRaw);
+
+  return categoryMutationSchema.safeParse({
+    name: String(formData.get("name") ?? ""),
+    slug: String(formData.get("slug") ?? ""),
+    sort_order: Number.isFinite(parsedSortOrder) ? parsedSortOrder : -1,
+    is_active: formData.get("is_active") === "on",
+  });
+}
+
+async function syncAchadoCategories(
+  supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>,
+  achadoId: string,
+  categoryIds: string[],
+): Promise<string | null> {
+  const { error: deleteError } = await supabase
+    .from("achado_categories")
+    .delete()
+    .eq("achado_id", achadoId);
+
+  if (deleteError) {
+    // Allow editing existing achados with no categories when migration hasn't been applied yet.
+    const isMissingTable =
+      deleteError.code === "PGRST205" || deleteError.code === "42P01";
+    if (isMissingTable && categoryIds.length === 0) {
+      return null;
+    }
+
+    console.error("[syncAchadoCategories] Supabase delete error:", {
+      code: deleteError.code,
+      message: deleteError.message,
+      details: deleteError.details,
+    });
+    return mapSupabaseMutationError(
+      "atualizar os departamentos do achado",
+      deleteError,
+    );
+  }
+
+  if (categoryIds.length === 0) {
+    return null;
+  }
+
+  const rows = categoryIds.map((categoryId) => ({
+    achado_id: achadoId,
+    category_id: categoryId,
+  }));
+
+  const { error: insertError } = await supabase
+    .from("achado_categories")
+    .insert(rows);
+
+  if (insertError) {
+    console.error("[syncAchadoCategories] Supabase insert error:", {
+      code: insertError.code,
+      message: insertError.message,
+      details: insertError.details,
+    });
+    return mapSupabaseMutationError(
+      "vincular os departamentos do achado",
+      insertError,
+    );
+  }
+
+  return null;
 }
 
 export async function loginAction(
@@ -129,18 +210,34 @@ export async function createAchadoAction(
     };
   }
 
+  const { category_ids, ...achadoPayload } = parsed.data;
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.from("achados").insert(parsed.data);
+  const { data, error } = await supabase
+    .from("achados")
+    .insert(achadoPayload)
+    .select("id")
+    .single();
 
-  if (error) {
+  if (error || !data) {
     console.error("[createAchadoAction] Supabase insert error:", {
-      code: error.code,
-      message: error.message,
-      details: error.details,
+      code: error?.code,
+      message: error?.message,
+      details: error?.details,
     });
     return {
-      error: mapSupabaseMutationError("criar o achado", error),
+      error: mapSupabaseMutationError("criar o achado", error ?? {}),
     };
+  }
+
+  if (category_ids.length > 0) {
+    const syncError = await syncAchadoCategories(
+      supabase,
+      (data as { id: string }).id,
+      category_ids,
+    );
+    if (syncError) {
+      return { error: syncError };
+    }
   }
 
   revalidateStorefrontAndAdmin();
@@ -167,10 +264,11 @@ export async function updateAchadoAction(
     };
   }
 
+  const { category_ids, ...achadoPayload } = parsed.data;
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("achados")
-    .update(parsed.data)
+    .update(achadoPayload)
     .eq("id", idCheck.data.id);
 
   if (error) {
@@ -182,6 +280,15 @@ export async function updateAchadoAction(
     return {
       error: mapSupabaseMutationError("atualizar o achado", error),
     };
+  }
+
+  const syncError = await syncAchadoCategories(
+    supabase,
+    idCheck.data.id,
+    category_ids,
+  );
+  if (syncError) {
+    return { error: syncError };
   }
 
   revalidateStorefrontAndAdmin();
@@ -276,6 +383,111 @@ export async function deleteAchadoAction(
         );
       }
     }
+  }
+
+  revalidateStorefrontAndAdmin();
+  return { ok: true };
+}
+
+export async function createCategoryAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+
+  const parsed = parseCategoryFormData(formData);
+  if (!parsed.success) {
+    return {
+      error: "Corrija os campos destacados antes de criar.",
+      fieldErrors: extractZodFieldErrors(parsed.error.issues),
+    };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.from("categories").insert(parsed.data);
+
+  if (error) {
+    console.error("[createCategoryAction] Supabase insert error:", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+    });
+    return {
+      error: mapSupabaseMutationError("criar o departamento", error),
+    };
+  }
+
+  revalidateStorefrontAndAdmin();
+  return { success: "Departamento criado com sucesso!" };
+}
+
+export async function updateCategoryAction(
+  id: string,
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+
+  const idCheck = deleteCategorySchema.safeParse({ id });
+  if (!idCheck.success) {
+    return { error: "Identificador de departamento inválido." };
+  }
+
+  const parsed = parseCategoryFormData(formData);
+  if (!parsed.success) {
+    return {
+      error: "Corrija os campos destacados antes de salvar.",
+      fieldErrors: extractZodFieldErrors(parsed.error.issues),
+    };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("categories")
+    .update(parsed.data)
+    .eq("id", idCheck.data.id);
+
+  if (error) {
+    console.error("[updateCategoryAction] Supabase update error:", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+    });
+    return {
+      error: mapSupabaseMutationError("atualizar o departamento", error),
+    };
+  }
+
+  revalidateStorefrontAndAdmin();
+  return { success: "Departamento atualizado com sucesso!" };
+}
+
+export async function deleteCategoryAction(
+  id: string,
+): Promise<SimpleActionResult> {
+  await requireAdmin();
+
+  const parsed = deleteCategorySchema.safeParse({ id });
+  if (!parsed.success) {
+    return { ok: false, error: "Identificador de departamento inválido." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("categories")
+    .delete()
+    .eq("id", parsed.data.id);
+
+  if (error) {
+    console.error("[deleteCategoryAction] Supabase delete error:", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+    });
+    return {
+      ok: false,
+      error: mapSupabaseMutationError("excluir o departamento", error),
+    };
   }
 
   revalidateStorefrontAndAdmin();

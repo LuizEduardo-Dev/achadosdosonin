@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   ExternalLink,
   LayoutDashboard,
+  LayoutGrid,
   LogOut,
   Package,
   Settings,
@@ -16,6 +17,12 @@ import { logoutAction } from "@/app/admin/actions";
 const NAV_ITEMS = [
   { href: "/admin", label: "Painel", icon: LayoutDashboard, exact: true },
   { href: "/admin/achados", label: "Achados", icon: Package, exact: false },
+  {
+    href: "/admin/departamentos",
+    label: "Departamentos",
+    icon: LayoutGrid,
+    exact: false,
+  },
   {
     href: "/admin/configuracoes",
     label: "Configurações",

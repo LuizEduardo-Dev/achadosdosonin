@@ -14,7 +14,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import type { Achado, AchadoStatus } from "@/types/achado";
+import type { Achado, AchadoStatus, Category } from "@/types/achado";
 import {
   deleteAchadoAction,
   updateAchadoStatusAction,
@@ -22,6 +22,7 @@ import {
 import { formatDatePtBR } from "@/lib/format";
 import { resolveAchadoImageUrl } from "@/lib/supabase/storage";
 import { Button, buttonClasses } from "@/components/ui/button";
+import { Select } from "@/components/ui/input";
 
 type StatusFilter = "all" | AchadoStatus;
 type BusyKind = "deleting" | AchadoStatus;
@@ -40,11 +41,16 @@ const STATUS_BADGE_CLASSES: Record<AchadoStatus, string> = {
 
 interface AchadoListClientProps {
   achados: Achado[];
+  categories: Category[];
 }
 
-export function AchadoListClient({ achados }: AchadoListClientProps) {
+export function AchadoListClient({
+  achados,
+  categories,
+}: AchadoListClientProps) {
   const router = useRouter();
   const [filter, setFilter] = useState<StatusFilter>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(
     null,
   );
@@ -57,6 +63,11 @@ export function AchadoListClient({ achados }: AchadoListClientProps) {
   const [busyById, setBusyById] = useState<Record<string, BusyKind>>({});
   const [actionError, setActionError] = useState<string | null>(null);
   const inFlightRef = useRef<Set<string>>(new Set());
+
+  const categoryMap = useMemo(
+    () => new Map(categories.map((cat) => [cat.id, cat])),
+    [categories],
+  );
 
   const effectiveAchados = useMemo(
     () =>
@@ -71,9 +82,19 @@ export function AchadoListClient({ achados }: AchadoListClientProps) {
   );
 
   const filtered = useMemo(() => {
-    if (filter === "all") return effectiveAchados;
-    return effectiveAchados.filter((item) => item.status === filter);
-  }, [effectiveAchados, filter]);
+    return effectiveAchados.filter((item) => {
+      if (filter !== "all" && item.status !== filter) {
+        return false;
+      }
+      if (
+        categoryFilter !== "all" &&
+        !(item.category_ids ?? []).includes(categoryFilter)
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [effectiveAchados, filter, categoryFilter]);
 
   const counts = useMemo(
     () => ({
@@ -166,29 +187,55 @@ export function AchadoListClient({ achados }: AchadoListClientProps) {
         </div>
       )}
 
-      <div className="no-scrollbar flex items-center gap-2 overflow-x-auto pb-1">
-        {(
-          [
-            { key: "all", label: `Todos (${counts.all})` },
-            { key: "published", label: `Publicados (${counts.published})` },
-            { key: "draft", label: `Rascunhos (${counts.draft})` },
-            { key: "archived", label: `Arquivados (${counts.archived})` },
-          ] as const
-        ).map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            aria-pressed={filter === tab.key}
-            onClick={() => setFilter(tab.key)}
-            className={`shrink-0 cursor-pointer rounded-full border px-3.5 py-1.5 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link ${
-              filter === tab.key
-                ? "border-ink bg-ink font-medium text-on-ink"
-                : "border-border bg-surface font-normal text-text hover:bg-surface-2"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="no-scrollbar flex items-center gap-2 overflow-x-auto pb-1">
+          {(
+            [
+              { key: "all", label: `Todos (${counts.all})` },
+              { key: "published", label: `Publicados (${counts.published})` },
+              { key: "draft", label: `Rascunhos (${counts.draft})` },
+              { key: "archived", label: `Arquivados (${counts.archived})` },
+            ] as const
+          ).map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              aria-pressed={filter === tab.key}
+              onClick={() => setFilter(tab.key)}
+              className={`shrink-0 cursor-pointer rounded-full border px-3.5 py-1.5 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link ${
+                filter === tab.key
+                  ? "border-ink bg-ink font-medium text-on-ink"
+                  : "border-border bg-surface font-normal text-text hover:bg-surface-2"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {categories.length > 0 && (
+          <div className="w-full sm:w-64">
+            <Select
+              aria-label="Filtrar por departamento"
+              value={categoryFilter}
+              onChange={(event) => setCategoryFilter(event.target.value)}
+            >
+              <option value="all" className="bg-surface text-text">
+                Todos os departamentos
+              </option>
+              {categories.map((category) => (
+                <option
+                  key={category.id}
+                  value={category.id}
+                  className="bg-surface text-text"
+                >
+                  {category.name}
+                  {!category.is_active ? " (inativo)" : ""}
+                </option>
+              ))}
+            </Select>
+          </div>
+        )}
       </div>
 
       {filtered.length === 0 ? (
@@ -256,6 +303,23 @@ export function AchadoListClient({ achados }: AchadoListClientProps) {
                     <h2 className="line-clamp-2 text-sm font-medium text-text sm:text-base">
                       {item.title}
                     </h2>
+
+                    {(item.category_ids?.length ?? 0) > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-0.5">
+                        {item.category_ids?.map((catId) => {
+                          const cat = categoryMap.get(catId);
+                          if (!cat) return null;
+                          return (
+                            <span
+                              key={cat.id}
+                              className="inline-flex items-center rounded-full border border-border bg-surface-2 px-2 py-0.5 text-[11px] text-text-muted"
+                            >
+                              {cat.name}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
 
