@@ -1,0 +1,122 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #F5F4EE;
+  --surface: #FFFFFF;
+  --surface-2: #ECEEE5;
+  --border: #DDE0D3;
+  --ink: #180828;
+  --ink-hover: #2B1347;
+  --link: #5B3A8E;
+  --price: #1B6E45;
+  --badge-bg: #E0F0E6;
+  --badge-text: #165A38;
+  --text: #1C1A24;
+  --text-muted: #65656B;
+  --on-ink: #F3EFF8;
+  --on-ink-muted: #C9BEDC;
+  --accent-sage: #A9D8B8;
+  --whatsapp: #25D366;
+  --whatsapp-text: #04361A;
+  --danger: #C0392B;
+  --success: #1B6E45;
+  --shadow-card-hover: 0 4px 14px rgba(28, 26, 36, 0.08);
+  --shadow-modal: 0 12px 32px rgba(28, 26, 36, 0.18);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-ink: var(--ink);
+  --color-ink-hover: var(--ink-hover);
+  --color-link: var(--link);
+  --color-price: var(--price);
+  --color-badge-bg: var(--badge-bg);
+  --color-badge-text: var(--badge-text);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-on-ink: var(--on-ink);
+  --color-on-ink-muted: var(--on-ink-muted);
+  --color-accent-sage: var(--accent-sage);
+  --color-whatsapp: var(--whatsapp);
+  --color-whatsapp-text: var(--whatsapp-text);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --font-sans: var(--font-plus-jakarta), ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+html {
+  color-scheme: light;
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  letter-spacing: 0;
+  overflow-x: clip;
+}
+
+.card-hover-shadow {
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.card-hover-shadow:hover {
+  box-shadow: var(--shadow-card-hover);
+}
+
+.modal-shadow {
+  box-shadow: var(--shadow-modal);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-modal-overlay {
+  animation: modalFadeIn 160ms ease-out both;
+}
+
+.animate-modal-content {
+  animation: modalSlideUp 180ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,46 @@
+[build]
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Preview and branch deploys: expose context to Next.js so `next.config.ts`,
+# `src/app/robots.ts`, and `src/app/layout.tsx` apply `X-Robots-Tag: noindex, nofollow`,
+# block crawlers in robots.txt, and enable `?debugInApp=` simulation.
+# Production (`[context.production]`) remains indexable (except `/admin/*`) with debug disabled.
+[context.deploy-preview.environment]
+  NEXT_PUBLIC_NETLIFY_CONTEXT = "deploy-preview"
+
+[context.branch-deploy.environment]
+  NEXT_PUBLIC_NETLIFY_CONTEXT = "branch-deploy"
+
+[context.production.environment]
+  NEXT_PUBLIC_NETLIFY_CONTEXT = "production"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=utf-8"
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Service-Worker-Allowed = "/"
+
+[[headers]]
+  for = "/admin"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Cache-Control = "private, no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/admin/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Cache-Control = "private, no-cache, no-store, must-revalidate"
