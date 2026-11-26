@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { Achado } from "@/types/achado";
 import { UI_COPY } from "@/lib/config";
+import { toSafeHttpUrl } from "@/lib/utils/url";
 import { resolveAchadoImageUrl } from "@/lib/supabase/storage";
 
 interface AchadoCardProps {
@@ -9,14 +10,10 @@ interface AchadoCardProps {
 }
 
 export function AchadoCard({ achado, priority = false }: AchadoCardProps) {
-  return (
-    <a
-      href={achado.affiliate_url}
-      target="_blank"
-      rel="noopener noreferrer sponsored"
-      aria-label={`Comprar ${achado.title} na ${achado.store}`}
-      className="card-hover-shadow group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface text-left hover:border-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link"
-    >
+  const safeAffiliateUrl = toSafeHttpUrl(achado.affiliate_url);
+
+  const cardContent = (
+    <>
       <div className="relative aspect-square w-full bg-surface p-2">
         <div className="relative h-full w-full">
           <Image
@@ -43,6 +40,26 @@ export function AchadoCard({ achado, priority = false }: AchadoCardProps) {
           {UI_COPY.card.cta}
         </span>
       </div>
+    </>
+  );
+
+  if (!safeAffiliateUrl) {
+    return (
+      <div className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface text-left opacity-75">
+        {cardContent}
+      </div>
+    );
+  }
+
+  return (
+    <a
+      href={safeAffiliateUrl}
+      target="_blank"
+      rel="noopener noreferrer sponsored"
+      aria-label={`Comprar ${achado.title} na ${achado.store}`}
+      className="card-hover-shadow group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface text-left hover:border-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link"
+    >
+      {cardContent}
     </a>
   );
 }

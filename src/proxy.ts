@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isAdminUser } from "@/lib/auth";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
 
 export async function proxy(request: NextRequest) {
@@ -38,7 +39,7 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isLoginPage = pathname === "/admin/login";
 
-  if (!user && !isLoginPage) {
+  if ((!user || !isAdminUser(user)) && !isLoginPage) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/admin/login";
     return NextResponse.redirect(loginUrl);

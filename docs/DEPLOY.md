@@ -24,6 +24,7 @@ As migrations em `supabase/migrations/` criam toda a estrutura do zero (extensã
    3. `supabase/migrations/20261122000002_grant_table_privileges.sql`
    4. `supabase/migrations/20261126000001_make_price_cents_nullable.sql`
    5. `supabase/migrations/20261126000002_categories.sql`
+   6. `supabase/migrations/20261126000003_security_hardening.sql`
 3. Confirme que todas retornaram **Success**.
 
 **Opção B — Via Supabase CLI (opcional):**

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MessageCircle, Tag } from "lucide-react";
 import { SITE_CONFIG, UI_COPY } from "@/lib/config";
+import { toSafeHttpUrl } from "@/lib/utils/url";
 import { buttonClasses } from "@/components/ui/button";
 
 interface SiteHeaderProps {
@@ -8,7 +9,7 @@ interface SiteHeaderProps {
 }
 
 export function SiteHeader({ whatsappGroupUrl = "" }: SiteHeaderProps) {
-  const cleanUrl = whatsappGroupUrl.trim();
+  const cleanUrl = toSafeHttpUrl(whatsappGroupUrl);
 
   return (
     <header className="rounded-b-2xl bg-ink text-on-ink">

@@ -18,6 +18,15 @@
   NEXT_PUBLIC_NETLIFY_CONTEXT = "production"
 
 [[headers]]
+  for = "/*"
+  [headers.values]
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+[[headers]]
   for = "/sw.js"
   [headers.values]
     Content-Type = "application/javascript; charset=utf-8"

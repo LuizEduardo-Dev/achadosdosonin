@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { cache, Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SITE_CONFIG } from "@/lib/config";
@@ -11,6 +11,16 @@ import { StorefrontSkeleton } from "@/components/storefront-skeleton";
 
 export const dynamic = "force-dynamic";
 
+const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+const getCachedCategory = cache(async (slug: string) => {
+  const normalized = slug.trim().toLowerCase();
+  if (!SLUG_REGEX.test(normalized)) {
+    return null;
+  }
+  return getPublicCategoryBySlug(normalized);
+});
+
 interface DepartmentPageProps {
   params: Promise<{ slug: string }>;
 }
@@ -19,7 +29,7 @@ export async function generateMetadata({
   params,
 }: DepartmentPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const category = await getPublicCategoryBySlug(slug);
+  const category = await getCachedCategory(slug);
 
   if (!category) {
     return {
@@ -47,14 +57,13 @@ export async function generateMetadata({
 
 export default async function DepartmentPage({ params }: DepartmentPageProps) {
   const { slug } = await params;
-  const [category, storefront] = await Promise.all([
-    getPublicCategoryBySlug(slug),
-    getPublicStorefrontData(),
-  ]);
+  const category = await getCachedCategory(slug);
 
   if (!category) {
     notFound();
   }
+
+  const storefront = await getPublicStorefrontData();
 
   const departmentAchados = storefront.achados.filter((item) =>
     item.category_ids?.includes(category.id),

@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { WHATSAPP_LINK_CONFIG } from "@/lib/config";
+import { toSafeHttpUrl } from "@/lib/utils/url";
 import {
   openWhatsappInAppPrompt,
   shouldInterceptWhatsappClick,
@@ -27,6 +28,11 @@ export function WhatsAppLink({
   onClick,
   children,
 }: WhatsAppLinkProps) {
+  const safeHref = toSafeHttpUrl(href);
+  if (!safeHref) {
+    return null;
+  }
+
   const target = WHATSAPP_LINK_CONFIG.openInSameTab ? undefined : "_blank";
   const rel = WHATSAPP_LINK_CONFIG.openInSameTab
     ? undefined
@@ -34,7 +40,7 @@ export function WhatsAppLink({
 
   return (
     <a
-      href={href}
+      href={safeHref}
       target={target}
       rel={rel}
       aria-label={ariaLabel}
@@ -43,7 +49,7 @@ export function WhatsAppLink({
         if (shouldInterceptWhatsappClick()) {
           event.preventDefault();
           onClick?.();
-          openWhatsappInAppPrompt(href);
+          openWhatsappInAppPrompt(safeHref);
           return;
         }
         onClick?.();

@@ -7,16 +7,16 @@ export function isAdminUser(user: User | null): boolean {
   if (!user) return false;
 
   const hasAdminClaim = user.app_metadata?.role === "admin";
-  if (hasAdminClaim) {
-    return true;
+  if (!hasAdminClaim) {
+    return false;
   }
 
   const allowedEmail = getServerEnv().ADMIN_EMAIL;
-  if (allowedEmail && user.email?.toLowerCase() === allowedEmail) {
-    return true;
+  if (allowedEmail && user.email?.toLowerCase() !== allowedEmail) {
+    return false;
   }
 
-  return false;
+  return true;
 }
 
 export async function getAuthenticatedAdmin(): Promise<User | null> {

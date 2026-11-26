@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/auth";
 import { ACHADOS_STORAGE_BUCKET } from "@/lib/supabase/storage";
 import { extractZodFieldErrors, mapSupabaseMutationError } from "@/lib/errors";
 import {
+  ACHADO_IMAGE_PATH_REGEX,
   deleteAchadoSchema,
   updateAchadoStatusSchema,
 } from "@/lib/validators/admin";
@@ -184,12 +185,7 @@ export async function deleteAchadoAction(
 
   if (existing?.image_path) {
     const path = existing.image_path.trim();
-    if (
-      path &&
-      !path.startsWith("/") &&
-      !path.startsWith("http://") &&
-      !path.startsWith("https://")
-    ) {
+    if (ACHADO_IMAGE_PATH_REGEX.test(path)) {
       try {
         await supabase.storage.from(ACHADOS_STORAGE_BUCKET).remove([path]);
       } catch (storageErr) {

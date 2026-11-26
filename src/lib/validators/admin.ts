@@ -17,6 +17,9 @@ export const loginSchema = z.object({
 
 export const MAX_ACHADO_CATEGORIES = 3;
 
+export const ACHADO_IMAGE_PATH_REGEX =
+  /^achados\/[A-Za-z0-9_-]+\.(?:webp|jpe?g|png)$/i;
+
 export const achadoMutationSchema = z.object({
   title: z
     .string()
@@ -37,7 +40,10 @@ export const achadoMutationSchema = z.object({
   image_path: z
     .string()
     .trim()
-    .min(1, "Envie uma imagem para o achado."),
+    .regex(
+      ACHADO_IMAGE_PATH_REGEX,
+      "Caminho de imagem inválido. Envie a imagem novamente.",
+    ),
   status: achadoStatusSchema,
   expires_at: z.string().datetime().nullable(),
   category_ids: z
