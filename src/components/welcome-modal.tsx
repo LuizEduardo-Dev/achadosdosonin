@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { MessageCircle, X } from "lucide-react";
 import type { SiteSettings } from "@/types/achado";
 import { UI_COPY } from "@/lib/config";
+import { useDialogFocusTrap } from "@/hooks/use-dialog-focus-trap";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { WhatsAppLink } from "@/components/whatsapp-link";
 
@@ -16,15 +17,6 @@ interface ModalCooldownRecord {
   action: "dismissed" | "clicked_cta";
   timestamp: number;
 }
-
-const FOCUSABLE_SELECTOR = [
-  "a[href]",
-  "button:not([disabled])",
-  "input:not([disabled])",
-  "select:not([disabled])",
-  "textarea:not([disabled])",
-  '[tabindex]:not([tabindex="-1"])',
-].join(", ");
 
 function isWithinCooldown(): boolean {
   try {
@@ -61,7 +53,6 @@ interface WelcomeModalProps {
 export function WelcomeModal({ settings, canOpen }: WelcomeModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
-  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   const whatsappUrl = settings.whatsapp_group_url.trim();
   const isEligible = settings.modal_enabled && Boolean(whatsappUrl);
@@ -78,7 +69,6 @@ export function WelcomeModal({ settings, canOpen }: WelcomeModalProps) {
 
     const timer = window.setTimeout(() => {
       if (!isWithinCooldown()) {
-        previousFocusRef.current = document.activeElement as HTMLElement | null;
         setIsOpen(true);
       }
     }, OPEN_DELAY_MS);
@@ -86,52 +76,11 @@ export function WelcomeModal({ settings, canOpen }: WelcomeModalProps) {
     return () => window.clearTimeout(timer);
   }, [canOpen, isEligible]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    const focusableElements = Array.from(
-      dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
-    );
-    focusableElements[0]?.focus();
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeModal("dismissed");
-        return;
-      }
-
-      if (event.key !== "Tab" || focusableElements.length === 0) {
-        return;
-      }
-
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
-
-      if (event.shiftKey) {
-        if (document.activeElement === firstElement) {
-          event.preventDefault();
-          lastElement.focus();
-        }
-      } else if (document.activeElement === lastElement) {
-        event.preventDefault();
-        firstElement.focus();
-      }
-    };
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", handleKeyDown);
-      previousFocusRef.current?.focus();
-    };
-  }, [isOpen, closeModal]);
+  useDialogFocusTrap(
+    dialogRef,
+    isOpen && isEligible,
+    useCallback(() => closeModal("dismissed"), [closeModal]),
+  );
 
   if (!isOpen || !isEligible) {
     return null;

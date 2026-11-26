@@ -3,10 +3,8 @@
 import { useActionState, useState } from "react";
 import { AlertCircle, CheckCircle2, Loader2, Save } from "lucide-react";
 import type { SiteSettings } from "@/types/achado";
-import {
-  updateSiteSettingsAction,
-  type ActionState,
-} from "@/app/admin/actions";
+import { updateSiteSettingsAction } from "@/app/admin/actions/settings";
+import type { ActionState } from "@/app/admin/actions/types";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 

@@ -12,7 +12,7 @@ import {
   Tag,
 } from "lucide-react";
 import { SITE_CONFIG } from "@/lib/config";
-import { logoutAction } from "@/app/admin/actions";
+import { logoutAction } from "@/app/admin/actions/auth";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Painel", icon: LayoutDashboard, exact: true },

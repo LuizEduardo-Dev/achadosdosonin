@@ -2,7 +2,8 @@
 
 import { useActionState } from "react";
 import { AlertCircle, Lock } from "lucide-react";
-import { loginAction, type ActionState } from "@/app/admin/actions";
+import { loginAction } from "@/app/admin/actions/auth";
+import type { ActionState } from "@/app/admin/actions/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 

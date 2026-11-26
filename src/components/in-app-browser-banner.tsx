@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowUpRight, Check, Copy, ExternalLink, X } from "lucide-react";
 import type { InAppAppKey, InAppPolicy } from "@/lib/in-app-policy";
 import {
@@ -9,16 +9,9 @@ import {
   type MobileOS,
 } from "@/lib/detect-in-app-browser";
 import { UI_COPY } from "@/lib/config";
+import { copyTextToClipboard } from "@/lib/utils/clipboard";
+import { useDialogFocusTrap } from "@/hooks/use-dialog-focus-trap";
 import { Button, buttonClasses } from "@/components/ui/button";
-
-const FOCUSABLE_SELECTOR = [
-  "a[href]",
-  "button:not([disabled])",
-  "input:not([disabled])",
-  "select:not([disabled])",
-  "textarea:not([disabled])",
-  '[tabindex]:not([tabindex="-1"])',
-].join(", ");
 
 interface InAppBrowserBannerProps {
   open: boolean;
@@ -41,57 +34,10 @@ export function InAppBrowserBanner({
 }: InAppBrowserBannerProps) {
   const [copied, setCopied] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
-  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   const isStrong = policy === "strong" || isWhatsappPrompt;
 
-  useEffect(() => {
-    if (!open || !isStrong) return;
-
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    previousFocusRef.current = document.activeElement as HTMLElement | null;
-    const focusableElements = Array.from(
-      dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
-    );
-    focusableElements[0]?.focus();
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onDismiss();
-        return;
-      }
-
-      if (event.key !== "Tab" || focusableElements.length === 0) {
-        return;
-      }
-
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
-
-      if (event.shiftKey) {
-        if (document.activeElement === firstElement) {
-          event.preventDefault();
-          lastElement.focus();
-        }
-      } else if (document.activeElement === lastElement) {
-        event.preventDefault();
-        firstElement.focus();
-      }
-    };
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", handleKeyDown);
-      previousFocusRef.current?.focus();
-    };
-  }, [open, isStrong, onDismiss]);
+  useDialogFocusTrap(dialogRef, open && isStrong, onDismiss);
 
   if (!open) {
     return null;
@@ -110,24 +56,11 @@ export function InAppBrowserBanner({
 
   const handleCopyUrl = async () => {
     const shareUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`;
-
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(shareUrl);
-      } else {
-        const textArea = document.createElement("textarea");
-        textArea.value = shareUrl;
-        textArea.setAttribute("readonly", "");
-        textArea.style.position = "fixed";
-        textArea.style.opacity = "0";
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textArea);
-      }
+    const ok = await copyTextToClipboard(shareUrl);
+    if (ok) {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2500);
-    } catch {
+    } else {
       setCopied(false);
     }
   };

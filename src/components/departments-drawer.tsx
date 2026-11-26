@@ -1,16 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import Link from "next/link";
 import { LayoutGrid, X } from "lucide-react";
 import type { Category } from "@/types/achado";
 import { UI_COPY } from "@/lib/config";
-
-const FOCUSABLE_SELECTOR = [
-  "a[href]",
-  "button:not([disabled])",
-  '[tabindex]:not([tabindex="-1"])',
-].join(", ");
+import { useDialogFocusTrap } from "@/hooks/use-dialog-focus-trap";
 
 interface DepartmentsDrawerProps {
   open: boolean;
@@ -28,55 +23,8 @@ export function DepartmentsDrawer({
   onClose,
 }: DepartmentsDrawerProps) {
   const panelRef = useRef<HTMLDivElement>(null);
-  const previousFocusRef = useRef<HTMLElement | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
-
-    const panel = panelRef.current;
-    if (!panel) return;
-
-    previousFocusRef.current = document.activeElement as HTMLElement | null;
-    const focusableElements = Array.from(
-      panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
-    );
-    focusableElements[0]?.focus();
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onClose();
-        return;
-      }
-
-      if (event.key !== "Tab" || focusableElements.length === 0) {
-        return;
-      }
-
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
-
-      if (event.shiftKey) {
-        if (document.activeElement === firstElement) {
-          event.preventDefault();
-          lastElement.focus();
-        }
-      } else if (document.activeElement === lastElement) {
-        event.preventDefault();
-        firstElement.focus();
-      }
-    };
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", handleKeyDown);
-      previousFocusRef.current?.focus();
-    };
-  }, [open, onClose]);
+  useDialogFocusTrap(panelRef, open, onClose);
 
   if (!open) {
     return null;

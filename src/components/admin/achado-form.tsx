@@ -7,23 +7,16 @@ import type { Achado, AchadoStatus, Category } from "@/types/achado";
 import {
   createAchadoAction,
   updateAchadoAction,
-  type ActionState,
-} from "@/app/admin/actions";
+} from "@/app/admin/actions/achados";
+import type { ActionState } from "@/app/admin/actions/types";
 import { MAX_ACHADO_CATEGORIES } from "@/lib/validators/admin";
+import { toDateTimeLocalValue } from "@/lib/utils/date";
+import { CategorySelectorField } from "@/components/admin/achados/category-selector-field";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
 
 const INITIAL_STATE: ActionState = {};
-
-function toDateTimeLocalValue(isoDate: string | null | undefined): string {
-  if (!isoDate) return "";
-  const date = new Date(isoDate);
-  if (Number.isNaN(date.getTime())) return "";
-
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
 
 interface AchadoFormProps {
   achado?: Achado;
@@ -62,13 +55,6 @@ export function AchadoForm({
       return [...prev, categoryId];
     });
   };
-
-  const selectableCategories = categories.filter(
-    (category) =>
-      category.is_active || selectedCategoryIds.includes(category.id),
-  );
-  const maxCategoriesReached =
-    selectedCategoryIds.length >= MAX_ACHADO_CATEGORIES;
 
   const boundAction = achado
     ? updateAchadoAction.bind(null, achado.id)
@@ -238,64 +224,12 @@ export function AchadoForm({
         )}
       </div>
 
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="block text-sm font-medium text-text">
-            Departamentos{" "}
-            <span className="font-normal text-text-muted">
-              (opcional, máx. {MAX_ACHADO_CATEGORIES})
-            </span>
-          </span>
-          <span className="text-xs text-text-muted">
-            Selecionados: {selectedCategoryIds.length}/{MAX_ACHADO_CATEGORIES}
-          </span>
-        </div>
-
-        {selectableCategories.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {selectableCategories.map((category) => {
-              const isSelected = selectedCategoryIds.includes(category.id);
-              const isDisabled = maxCategoriesReached && !isSelected;
-
-              return (
-                <label
-                  key={category.id}
-                  className={`inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors sm:text-sm ${
-                    isSelected
-                      ? "cursor-pointer border-ink bg-ink text-on-ink"
-                      : isDisabled
-                        ? "cursor-not-allowed border-border bg-surface-2 text-text-muted opacity-55"
-                        : "cursor-pointer border-border bg-surface text-text hover:bg-surface-2"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    name="category_ids"
-                    value={category.id}
-                    checked={isSelected}
-                    disabled={isDisabled}
-                    onChange={() => toggleCategory(category.id)}
-                    className="sr-only"
-                  />
-                  <span>
-                    {category.name}
-                    {!category.is_active ? " (inativo)" : ""}
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="text-xs text-text-muted">
-            Nenhum departamento cadastrado ainda. Você pode criá-los na aba
-            Departamentos.
-          </p>
-        )}
-
-        {fieldErrors?.category_ids && (
-          <p className="text-xs text-danger">{fieldErrors.category_ids}</p>
-        )}
-      </div>
+      <CategorySelectorField
+        categories={categories}
+        selectedIds={selectedCategoryIds}
+        onToggle={toggleCategory}
+        error={fieldErrors?.category_ids}
+      />
 
       <div className="space-y-1.5">
         <label
