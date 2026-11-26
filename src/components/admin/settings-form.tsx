@@ -86,7 +86,9 @@ export function SettingsForm({ settings }: SettingsFormProps) {
           placeholder="https://chat.whatsapp.com/..."
         />
         <p className="text-xs text-text-muted">
-          Usado no botão do topo e no modal de boas-vindas da vitrine.
+          Formato esperado: <code>https://chat.whatsapp.com/CodigoDoGrupo</code>{" "}
+          (links com <code>/invite/</code> são normalizados ao salvar). Usado no
+          topo, no modal de boas-vindas e na página <code>/grupo</code>.
         </p>
         {fieldErrors?.whatsapp_group_url && (
           <p className="text-xs text-danger">

@@ -25,7 +25,9 @@ interface InAppBrowserBannerProps {
   policy: Exclude<InAppPolicy, "off">;
   appKey: InAppAppKey | null;
   os: MobileOS;
+  isWhatsappPrompt?: boolean;
   onDismiss: () => void;
+  onContinueWhatsapp?: () => void;
 }
 
 export function InAppBrowserBanner({
@@ -33,13 +35,15 @@ export function InAppBrowserBanner({
   policy,
   appKey,
   os,
+  isWhatsappPrompt = false,
   onDismiss,
+  onContinueWhatsapp,
 }: InAppBrowserBannerProps) {
   const [copied, setCopied] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
-  const isStrong = policy === "strong";
+  const isStrong = policy === "strong" || isWhatsappPrompt;
 
   useEffect(() => {
     if (!open || !isStrong) return;
@@ -94,6 +98,9 @@ export function InAppBrowserBanner({
   }
 
   const copy = getInAppCopy(appKey);
+  const dialogTitle = isWhatsappPrompt
+    ? "Abra no navegador para entrar no WhatsApp"
+    : copy.strongTitle;
   const currentHref =
     typeof window !== "undefined" ? window.location.href : "";
   const androidIntentUrl =
@@ -163,7 +170,7 @@ export function InAppBrowserBanner({
             id="in-app-strong-title"
             className="text-lg font-semibold leading-snug text-text sm:text-xl"
           >
-            {copy.strongTitle}
+            {dialogTitle}
           </h2>
 
           <p
@@ -205,7 +212,11 @@ export function InAppBrowserBanner({
 
             <button
               type="button"
-              onClick={onDismiss}
+              onClick={
+                isWhatsappPrompt && onContinueWhatsapp
+                  ? onContinueWhatsapp
+                  : onDismiss
+              }
               className="min-h-10 w-full cursor-pointer rounded-lg px-3 text-sm font-medium text-text-muted transition-colors hover:bg-surface-2 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link"
             >
               {UI_COPY.inAppBanner.continueButton}

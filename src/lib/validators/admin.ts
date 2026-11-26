@@ -49,8 +49,71 @@ export const deleteAchadoSchema = z.object({
   id: z.string().uuid("ID inválido."),
 });
 
+const WHATSAPP_URL_ERROR =
+  "Informe um link de convite válido do WhatsApp (ex.: https://chat.whatsapp.com/CodigoDoGrupo), sem espaços ou parâmetros extras.";
+
+export function normalizeWhatsappGroupUrl(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+  if (/\s/.test(trimmed)) return null;
+
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    return null;
+  }
+
+  if (
+    parsed.protocol !== "https:" ||
+    parsed.hostname.toLowerCase() !== "chat.whatsapp.com" ||
+    parsed.port !== "" ||
+    parsed.username !== "" ||
+    parsed.password !== "" ||
+    parsed.search !== "" ||
+    parsed.hash !== ""
+  ) {
+    return null;
+  }
+
+  const segments = parsed.pathname.split("/").filter(Boolean);
+  let code = "";
+  if (segments.length === 1) {
+    code = segments[0];
+  } else if (
+    segments.length === 2 &&
+    segments[0].toLowerCase() === "invite"
+  ) {
+    code = segments[1];
+  } else {
+    return null;
+  }
+
+  if (!/^[A-Za-z0-9_-]{6,64}$/.test(code)) {
+    return null;
+  }
+
+  return `https://chat.whatsapp.com/${code}`;
+}
+
+const whatsappGroupUrlSchema = z
+  .string()
+  .trim()
+  .transform((value, ctx) => {
+    if (!value) return "";
+    const normalized = normalizeWhatsappGroupUrl(value);
+    if (normalized === null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: WHATSAPP_URL_ERROR,
+      });
+      return z.NEVER;
+    }
+    return normalized;
+  });
+
 export const siteSettingsMutationSchema = z.object({
-  whatsapp_group_url: z.union([z.literal(""), httpUrlSchema]),
+  whatsapp_group_url: whatsappGroupUrlSchema,
   modal_enabled: z.boolean(),
   modal_title: z
     .string()

@@ -180,3 +180,21 @@ A validação Zod em `src/lib/env.ts` roda no início do build para evitar deplo
 
 ### Erro `column achados.price_note does not exist` ao salvar no admin
 Aplique a segunda migration (`supabase/migrations/20261122000001_add_price_note.sql`) no SQL Editor do Supabase.
+
+
+---
+
+## 5. Checklist de testes do link do grupo de WhatsApp
+
+Teste sempre em **aparelhos reais** antes de divulgar um link na bio ou em vídeos:
+
+| Ambiente | Navegador normal (Chrome / Safari) | TikTok (navegador embutido) | Instagram (navegador embutido) |
+|---|---|---|---|
+| **Android** | Clicar em **Grupo VIP**, no modal ou em `/grupo` abre o convite direto no app do WhatsApp | Ao abrir `/grupo` ou tocar em botão do WhatsApp, `intent:` abre a mesma página no Chrome; no Chrome, o botão leva direto ao WhatsApp | Faixa discreta no topo; ao tocar em **Entrar no grupo** / **Grupo VIP**, abre o painel para abrir no Chrome (sem cair direto na página web de instalação) |
+| **iPhone (iOS)** | Clicar no CTA abre `chat.whatsapp.com` no Safari/app do WhatsApp | Painel com instruções manuais (**⋯ → Abrir no navegador**); link só vai para `chat.whatsapp.com` se escolher **Continuar aqui mesmo assim** | Faixa no topo; ao tocar no CTA do WhatsApp, abre painel com instruções manuais (**⋯ → Abrir no navegador externo**) |
+
+### Troubleshooting de convites do WhatsApp
+
+- **Convite redefinido / inválido:** se alguém redefiniu o link de convite no WhatsApp, o link antigo deixa de funcionar imediatamente. Gere o novo link curto (`https://chat.whatsapp.com/...`) e atualize em `/admin/configuracoes`.
+- **Grupo lotado:** quando o grupo atingir o limite de participantes, crie um novo grupo (ex.: "Achados VIP #2"), copie o novo link de convite e troque apenas em `/admin/configuracoes` — o link da bio (`/grupo`) permanece o mesmo.
+- **WhatsApp × WhatsApp Business no mesmo aparelho:** se houver dois aplicativos instalados e o sistema perguntar qual usar ou abrir o app errado, confira nas configurações de links padrão do Android qual WhatsApp está associado a `chat.whatsapp.com`. Em último caso, o botão **Copiar link** permite abrir no navegador principal.

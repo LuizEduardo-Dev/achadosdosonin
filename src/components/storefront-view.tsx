@@ -9,6 +9,7 @@ import { SITE_CONFIG, UI_COPY } from "@/lib/config";
 import { AchadoCard } from "@/components/achado-card";
 import { StoreFilter } from "@/components/store-filter";
 import { StorefrontOverlays } from "@/components/storefront-overlays";
+import { WhatsAppLink } from "@/components/whatsapp-link";
 import { Button, buttonClasses } from "@/components/ui/button";
 
 function normalizeForSearch(value: string): string {
@@ -112,11 +113,9 @@ export function StorefrontView({
             </Link>
 
             {whatsappUrl && (
-              <a
+              <WhatsAppLink
                 href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={UI_COPY.header.whatsappAriaLabel}
+                ariaLabel={UI_COPY.header.whatsappAriaLabel}
                 className={buttonClasses(
                   "whatsapp",
                   "sm",
@@ -128,7 +127,7 @@ export function StorefrontView({
                   aria-hidden="true"
                 />
                 <span>{UI_COPY.header.whatsappCta}</span>
-              </a>
+              </WhatsAppLink>
             )}
 
             <div className="order-3 w-full sm:order-2 sm:max-w-md sm:flex-1">

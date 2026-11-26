@@ -5,6 +5,7 @@ import { MessageCircle, X } from "lucide-react";
 import type { SiteSettings } from "@/types/achado";
 import { UI_COPY } from "@/lib/config";
 import { Button, buttonClasses } from "@/components/ui/button";
+import { WhatsAppLink } from "@/components/whatsapp-link";
 
 const STORAGE_KEY = "sonin_links_welcome_modal";
 const OPEN_DELAY_MS = 1500;
@@ -181,16 +182,14 @@ export function WelcomeModal({ settings, canOpen }: WelcomeModalProps) {
         </p>
 
         <div className="mt-5 flex flex-col gap-2.5">
-          <a
+          <WhatsAppLink
             href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
             onClick={() => closeModal("clicked_cta")}
             className={buttonClasses("whatsapp", "md", "w-full font-semibold")}
           >
             <MessageCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span>{UI_COPY.welcomeModal.ctaLabel}</span>
-          </a>
+          </WhatsAppLink>
 
           <Button
             variant="secondary"

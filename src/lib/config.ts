@@ -21,6 +21,11 @@ export const SITE_CONFIG = {
   },
 } as const;
 
+export const WHATSAPP_LINK_CONFIG = {
+  /** Keep false to open in a new tab outside in-app browsers; toggle true to test same-tab delivery to the WhatsApp app. */
+  openInSameTab: false,
+} as const;
+
 export const UI_COPY = {
   header: {
     whatsappCta: "Grupo VIP",
