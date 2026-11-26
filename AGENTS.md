@@ -81,11 +81,12 @@ Comportamento "strong" (TikTok)
   escolha Abrir no navegador"), seta apontando para o menu, botão "Copiar
   link do site" (secundário, com contorno) e saída discreta
   "Continuar aqui mesmo assim".
-- Android: botão primário "Abrir no navegador" que navega para
-  `intent:<URL atual completa, sem hash>#Intent;end`, preservando query/UTM.
-  Além disso, UMA tentativa automática por sessão (flag em sessionStorage)
-  com window.location.replace(intentLink) logo ao detectar; se a página
-  continuar visível após ~1,5 s, exibir o painel normalmente.
+- Android: botão primário "Abrir no navegador" ativado por clique direto do
+  usuário usando URI Intent padrão
+  (`intent://<host><path><query>#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;package=com.android.chrome;S.browser_fallback_url=<encoded>;end`,
+  ou sem `package` quando for link de oferta para permitir App Links de lojas),
+  preservando query/UTM. Não disparar `intent://` automaticamente no load sem
+  gesto do usuário (WebViews recentes do TikTok bloqueiam e exibem erro).
 - iOS: somente instruções manuais. Não implementar atalhos nem hacks de
   esquemas de URL (não são confiáveis).
 
@@ -97,7 +98,8 @@ Comportamento "soft" (Instagram, Facebook, Messenger)
 Regras gerais
 - Nunca bloquear o conteúdo: sempre permitir continuar no navegador embutido.
 - **Botões do WhatsApp (`/grupo`, topo e modal):** dentro de navegador embutido (`strong` ou `soft`), o clique **não** navega direto para `chat.whatsapp.com`; ele abre o painel de saída do navegador embutido (reaproveitando o item 2.5). Só segue para `chat.whatsapp.com` (na mesma aba, sem `target="_blank"`) se a pessoa clicar em `"Continuar aqui mesmo assim"`.
-- O redirecionamento automático só leva à mesma URL, nunca a outra página.
+- **Links de oferta (card `"Comprar"`) no TikTok (`strong`):** o clique abre o painel de saída/cópia do link da oferta (para evitar que o usuário fique preso na versão web deslogada da loja dentro da WebView do TikTok, sem abrir o app da Shopee/loja). Só abre dentro da WebView na mesma aba se escolher `"Continuar aqui mesmo assim"`.
+- O redirecionamento via botão só usa a URL pretendida, nunca outra página.
 - O modal de boas-vindas só aparece depois que o painel/faixa for dispensado
   ou se não houver navegador embutido (nunca dois overlays juntos).
 - Canonical e og:url da home e `/tt`, `/ig`, `/wpp` sempre apontam para "/"; `/c/[slug]` e `/grupo` têm canonical próprios.

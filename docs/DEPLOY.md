@@ -195,8 +195,8 @@ Teste sempre em **aparelhos reais** antes de divulgar um link na bio ou em víde
 
 | Ambiente | Navegador normal (Chrome / Safari) | TikTok (navegador embutido) | Instagram (navegador embutido) |
 |---|---|---|---|
-| **Android** | Clicar em **Grupo VIP**, no modal ou em `/grupo` abre o convite direto no app do WhatsApp | Ao abrir `/grupo` ou tocar em botão do WhatsApp, `intent:` abre a mesma página no Chrome; no Chrome, o botão leva direto ao WhatsApp | Faixa discreta no topo; ao tocar em **Entrar no grupo** / **Grupo VIP**, abre o painel para abrir no Chrome (sem cair direto na página web de instalação) |
-| **iPhone (iOS)** | Clicar no CTA abre `chat.whatsapp.com` no Safari/app do WhatsApp | Painel com instruções manuais (**⋯ → Abrir no navegador**); link só vai para `chat.whatsapp.com` se escolher **Continuar aqui mesmo assim** | Faixa no topo; ao tocar no CTA do WhatsApp, abre painel com instruções manuais (**⋯ → Abrir no navegador externo**) |
+| **Android** | Clicar em **Grupo VIP**, no modal ou em `/grupo` abre o convite direto no app do WhatsApp | Na primeira visita ou ao tocar em **Grupo VIP** / **Comprar**, abre painel para sair pelo menu **⋯ → Abrir no navegador**, copiar link ou tentar `intent://` (sem redirecionamento automático bloqueado pela WebView); no Chrome, links de lojas (Shopee etc.) entregam ao app nativo | Faixa discreta no topo; ao tocar em **Entrar no grupo** / **Grupo VIP**, abre o painel para abrir no Chrome (sem cair direto na página web de instalação) |
+| **iPhone (iOS)** | Clicar no CTA abre `chat.whatsapp.com` no Safari/app do WhatsApp | Painel com instruções manuais (**⋯ → Abrir no navegador**) e cópia de link ao abrir `/grupo`, WhatsApp ou clicar em **Comprar**; só segue na WebView se escolher **Continuar aqui mesmo assim** | Faixa no topo; ao tocar no CTA do WhatsApp, abre painel com instruções manuais (**⋯ → Abrir no navegador externo**) |
 
 ### Troubleshooting de convites do WhatsApp
 

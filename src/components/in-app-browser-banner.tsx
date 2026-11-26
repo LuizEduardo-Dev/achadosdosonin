@@ -8,6 +8,7 @@ import {
   getInAppCopy,
   type MobileOS,
 } from "@/lib/detect-in-app-browser";
+import type { PendingExternalAction } from "@/lib/in-app-overlay-store";
 import { UI_COPY } from "@/lib/config";
 import { copyTextToClipboard } from "@/lib/utils/clipboard";
 import { useDialogFocusTrap } from "@/hooks/use-dialog-focus-trap";
@@ -18,9 +19,9 @@ interface InAppBrowserBannerProps {
   policy: Exclude<InAppPolicy, "off">;
   appKey: InAppAppKey | null;
   os: MobileOS;
-  isWhatsappPrompt?: boolean;
+  pendingAction: PendingExternalAction | null;
   onDismiss: () => void;
-  onContinueWhatsapp?: () => void;
+  onContinuePending?: () => void;
 }
 
 export function InAppBrowserBanner({
@@ -28,14 +29,14 @@ export function InAppBrowserBanner({
   policy,
   appKey,
   os,
-  isWhatsappPrompt = false,
+  pendingAction,
   onDismiss,
-  onContinueWhatsapp,
+  onContinuePending,
 }: InAppBrowserBannerProps) {
   const [copied, setCopied] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
 
-  const isStrong = policy === "strong" || isWhatsappPrompt;
+  const isStrong = policy === "strong" || Boolean(pendingAction);
 
   useDialogFocusTrap(dialogRef, open && isStrong, onDismiss);
 
@@ -44,19 +45,43 @@ export function InAppBrowserBanner({
   }
 
   const copy = getInAppCopy(appKey);
-  const dialogTitle = isWhatsappPrompt
-    ? "Abra no navegador para entrar no WhatsApp"
-    : copy.strongTitle;
+  const isOfferPrompt = pendingAction?.kind === "offer";
+  const isWhatsappPrompt = pendingAction?.kind === "whatsapp";
+
+  let dialogTitle = copy.strongTitle;
+  let dialogDescription = copy.strongSteps;
+  let copyButtonLabel: string = UI_COPY.inAppBanner.copyButton;
+  let androidIntentLabel = "Abrir no navegador";
+
+  if (isOfferPrompt && pendingAction) {
+    dialogTitle = pendingAction.storeName
+      ? `Abra no navegador para comprar no app da ${pendingAction.storeName}`
+      : "Abra no navegador para comprar pelo app da loja";
+    dialogDescription =
+      'No TikTok, o link abre fora do app da loja e sem sua conta logada. Toque nos três pontinhos (⋯) no canto superior direito e escolha "Abrir no navegador", ou copie o link da oferta para abrir no Chrome/Safari.';
+    copyButtonLabel = "Copiar link da oferta";
+    androidIntentLabel = "Abrir oferta no navegador";
+  } else if (isWhatsappPrompt) {
+    dialogTitle = "Abra no navegador para entrar no WhatsApp";
+  }
+
   const currentHref =
     typeof window !== "undefined" ? window.location.href : "";
+  const intentTargetHref =
+    isOfferPrompt && pendingAction ? pendingAction.url : currentHref;
   const androidIntentUrl =
-    isStrong && os === "android" && currentHref
-      ? buildAndroidIntentUrl(currentHref)
+    isStrong && os === "android" && intentTargetHref
+      ? buildAndroidIntentUrl(intentTargetHref, {
+          preferChrome: !isOfferPrompt,
+        })
       : null;
 
   const handleCopyUrl = async () => {
-    const shareUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`;
-    const ok = await copyTextToClipboard(shareUrl);
+    const targetToCopy =
+      isOfferPrompt && pendingAction
+        ? pendingAction.url
+        : `${window.location.origin}${window.location.pathname}${window.location.search}`;
+    const ok = await copyTextToClipboard(targetToCopy);
     if (ok) {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2500);
@@ -110,18 +135,27 @@ export function InAppBrowserBanner({
             id="in-app-strong-desc"
             className="mt-2 text-sm leading-relaxed text-text-muted"
           >
-            {copy.strongSteps}
+            {dialogDescription}
           </p>
 
           <div className="mt-5 flex flex-col gap-2.5">
             {androidIntentUrl && (
-              <a
-                href={androidIntentUrl}
-                className={buttonClasses("primary", "md", "w-full")}
-              >
-                <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span>Abrir no navegador</span>
-              </a>
+              <div className="space-y-1.5">
+                <a
+                  href={androidIntentUrl}
+                  className={buttonClasses("primary", "md", "w-full")}
+                >
+                  <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>{androidIntentLabel}</span>
+                </a>
+
+                {appKey === "tiktok" && (
+                  <p className="text-center text-xs text-text-muted">
+                    Se o TikTok exibir erro ao abrir direto, use o menu (⋯) no
+                    topo direito ou copie o link abaixo.
+                  </p>
+                )}
+              </div>
             )}
 
             <Button
@@ -138,7 +172,7 @@ export function InAppBrowserBanner({
               ) : (
                 <>
                   <Copy className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  <span>{UI_COPY.inAppBanner.copyButton}</span>
+                  <span>{copyButtonLabel}</span>
                 </>
               )}
             </Button>
@@ -146,8 +180,8 @@ export function InAppBrowserBanner({
             <button
               type="button"
               onClick={
-                isWhatsappPrompt && onContinueWhatsapp
-                  ? onContinueWhatsapp
+                pendingAction && onContinuePending
+                  ? onContinuePending
                   : onDismiss
               }
               className="min-h-10 w-full cursor-pointer rounded-lg px-3 text-sm font-medium text-text-muted transition-colors hover:bg-surface-2 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link"

@@ -2,18 +2,23 @@
 
 import type { InAppAppKey } from "@/lib/in-app-policy";
 import {
-  buildAndroidIntentUrl,
   detectInAppBrowser,
   type MobileOS,
 } from "@/lib/detect-in-app-browser";
 
 const STRONG_DISMISSED_KEY = "sonin_links_inapp_strong_dismissed";
-const AUTO_INTENT_TRIED_KEY = "sonin_links_inapp_auto_intent_tried";
 const SOFT_DISMISSED_KEY = "sonin_links_inapp_soft_dismissed_at";
 const SOFT_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
-let autoIntentWaiting = false;
-let pendingWhatsappUrl: string | null = null;
+export type PendingActionKind = "whatsapp" | "offer";
+
+export interface PendingExternalAction {
+  kind: PendingActionKind;
+  url: string;
+  storeName?: string;
+}
+
+let pendingAction: PendingExternalAction | null = null;
 const listeners = new Set<() => void>();
 
 export function notifyOverlayListeners(): void {
@@ -37,27 +42,6 @@ export function isStrongDismissed(): boolean {
   }
 }
 
-export function isAutoIntentAlreadyTried(): boolean {
-  try {
-    return window.sessionStorage.getItem(AUTO_INTENT_TRIED_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-export function markAutoIntentTried(): void {
-  autoIntentWaiting = true;
-  try {
-    window.sessionStorage.setItem(AUTO_INTENT_TRIED_KEY, "1");
-  } catch {
-    // Ignore storage errors in restricted webviews
-  }
-}
-
-export function finishAutoIntentWait(): void {
-  autoIntentWaiting = false;
-}
-
 function isSoftWithinCooldown(): boolean {
   try {
     const raw = window.localStorage.getItem(SOFT_DISMISSED_KEY);
@@ -79,8 +63,7 @@ export function dismissInAppNotice(policy: "strong" | "soft"): void {
   } catch {
     // Ignore storage errors in restricted webviews
   }
-  pendingWhatsappUrl = null;
-  autoIntentWaiting = false;
+  pendingAction = null;
   notifyOverlayListeners();
 }
 
@@ -97,29 +80,48 @@ export function shouldInterceptWhatsappClick(): boolean {
   );
 }
 
+export function shouldInterceptOfferClick(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  const result = detectInAppBrowser(
+    window.navigator.userAgent,
+    window.location.search,
+  );
+  return result.isInApp && result.policy === "strong";
+}
+
 export function openWhatsappInAppPrompt(url: string): void {
-  pendingWhatsappUrl = url;
+  pendingAction = { kind: "whatsapp", url };
   notifyOverlayListeners();
 }
 
-export function cancelPendingWhatsappPrompt(): void {
-  pendingWhatsappUrl = null;
+export function openOfferInAppPrompt(url: string, storeName?: string): void {
+  pendingAction = { kind: "offer", url, storeName };
   notifyOverlayListeners();
 }
 
-export function continueToPendingWhatsapp(): void {
-  const targetUrl = pendingWhatsappUrl;
-  pendingWhatsappUrl = null;
+export function getPendingExternalAction(): PendingExternalAction | null {
+  return pendingAction;
+}
+
+export function cancelPendingExternalAction(): void {
+  pendingAction = null;
+  notifyOverlayListeners();
+}
+
+export function continueToPendingExternalAction(): void {
+  const action = pendingAction;
+  pendingAction = null;
   notifyOverlayListeners();
 
   if (
-    targetUrl &&
-    /^https?:\/\//i.test(targetUrl) &&
+    action?.url &&
+    /^https?:\/\//i.test(action.url) &&
     typeof window !== "undefined"
   ) {
-    // External chat.whatsapp.com invite link; intentional same-tab navigation (no target="_blank").
-    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-    window.location.assign(targetUrl);
+    // Intentional same-tab navigation when user chooses to continue inside the in-app browser.
+    window.location.assign(action.url);
   }
 }
 
@@ -132,8 +134,8 @@ export function getOverlayServerSnapshot(): string {
  * Format:
  * - "ssr"
  * - "none"
- * - "pending:<appKey>:<os>"
  * - "whatsapp:<appKey>:<os>:<sim>"
+ * - "offer:<appKey>:<os>:<sim>"
  * - "strong:<appKey>:<os>:<sim>"
  * - "soft:<appKey>:<os>:<sim>"
  */
@@ -144,28 +146,18 @@ export function getOverlayClientSnapshot(): string {
   );
 
   if (!result.isInApp || result.policy === "off" || !result.appKey) {
-    pendingWhatsappUrl = null;
+    pendingAction = null;
     return "none";
   }
 
-  if (pendingWhatsappUrl) {
-    return `whatsapp:${result.appKey}:${result.os}:${result.isSimulated ? "1" : "0"}`;
+  if (pendingAction) {
+    return `${pendingAction.kind}:${result.appKey}:${result.os}:${result.isSimulated ? "1" : "0"}`;
   }
 
   if (result.policy === "strong") {
     if (isStrongDismissed()) {
       return "none";
     }
-
-    const shouldAutoRedirect =
-      result.os === "android" &&
-      !result.isSimulated &&
-      !isAutoIntentAlreadyTried();
-
-    if (shouldAutoRedirect || autoIntentWaiting) {
-      return `pending:${result.appKey}:${result.os}`;
-    }
-
     return `strong:${result.appKey}:${result.os}:${result.isSimulated ? "1" : "0"}`;
   }
 
@@ -190,9 +182,4 @@ export function parseOverlaySnapshot(snapshot: string): {
     appKey: (rawAppKey as InAppAppKey | undefined) ?? null,
     os: (rawOs as MobileOS | undefined) ?? "other",
   };
-}
-
-export function triggerCurrentPageAndroidIntent(): void {
-  const intentUrl = buildAndroidIntentUrl(window.location.href);
-  window.location.replace(intentUrl);
 }

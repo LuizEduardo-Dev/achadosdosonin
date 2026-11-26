@@ -3,6 +3,7 @@ import type { Achado } from "@/types/achado";
 import { UI_COPY } from "@/lib/config";
 import { toSafeHttpUrl } from "@/lib/utils/url";
 import { resolveAchadoImageUrl } from "@/lib/supabase/storage";
+import { AffiliateLink } from "@/components/affiliate-link";
 
 interface AchadoCardProps {
   achado: Achado;
@@ -52,14 +53,13 @@ export function AchadoCard({ achado, priority = false }: AchadoCardProps) {
   }
 
   return (
-    <a
+    <AffiliateLink
       href={safeAffiliateUrl}
-      target="_blank"
-      rel="noopener noreferrer sponsored"
-      aria-label={`Comprar ${achado.title} na ${achado.store}`}
+      storeName={achado.store}
+      ariaLabel={`Comprar ${achado.title} na ${achado.store}`}
       className="card-hover-shadow group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface text-left hover:border-link focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link"
     >
       {cardContent}
-    </a>
+    </AffiliateLink>
   );
 }

@@ -1,26 +1,19 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import type { SiteSettings, TrafficSource } from "@/types/achado";
 import {
-  cancelPendingWhatsappPrompt,
-  continueToPendingWhatsapp,
+  cancelPendingExternalAction,
+  continueToPendingExternalAction,
   dismissInAppNotice,
-  finishAutoIntentWait,
   getOverlayClientSnapshot,
   getOverlayServerSnapshot,
-  isAutoIntentAlreadyTried,
-  markAutoIntentTried,
-  notifyOverlayListeners,
+  getPendingExternalAction,
   parseOverlaySnapshot,
   subscribeOverlayStore,
-  triggerCurrentPageAndroidIntent,
 } from "@/lib/in-app-overlay-store";
 import { InAppBrowserBanner } from "@/components/in-app-browser-banner";
 import { WelcomeModal } from "@/components/welcome-modal";
-
-const AUTO_INTENT_FALLBACK_DELAY_MS = 1500;
-let autoIntentTimer: number | null = null;
 
 interface StorefrontOverlaysProps {
   settings: SiteSettings;
@@ -40,33 +33,13 @@ export function StorefrontOverlays({
 
   const { mode, appKey, os } = parseOverlaySnapshot(snapshot);
 
-  useEffect(() => {
-    if (mode !== "pending") {
-      return;
-    }
-
-    if (autoIntentTimer !== null || isAutoIntentAlreadyTried()) {
-      return;
-    }
-
-    markAutoIntentTried();
-    triggerCurrentPageAndroidIntent();
-
-    autoIntentTimer = window.setTimeout(() => {
-      autoIntentTimer = null;
-      finishAutoIntentWait();
-      if (document.visibilityState === "visible") {
-        notifyOverlayListeners();
-      }
-    }, AUTO_INTENT_FALLBACK_DELAY_MS);
-  }, [mode]);
-
   const isClient = mode !== "ssr";
-  const isWhatsappPrompt = mode === "whatsapp";
+  const hasPendingAction = mode === "whatsapp" || mode === "offer";
+  const pendingAction = hasPendingAction ? getPendingExternalAction() : null;
   const inAppOpen =
-    mode === "strong" || mode === "soft" || isWhatsappPrompt;
+    mode === "strong" || mode === "soft" || hasPendingAction;
   const activePolicy =
-    mode === "strong" || isWhatsappPrompt ? "strong" : "soft";
+    mode === "strong" || hasPendingAction ? "strong" : "soft";
   const canOpenWelcomeModal =
     !disableWelcomeModal && isClient && mode === "none";
 
@@ -77,15 +50,15 @@ export function StorefrontOverlays({
         policy={activePolicy}
         appKey={appKey}
         os={os}
-        isWhatsappPrompt={isWhatsappPrompt}
+        pendingAction={pendingAction}
         onDismiss={() => {
-          if (isWhatsappPrompt) {
-            cancelPendingWhatsappPrompt();
+          if (hasPendingAction) {
+            cancelPendingExternalAction();
             return;
           }
           dismissInAppNotice(activePolicy);
         }}
-        onContinueWhatsapp={continueToPendingWhatsapp}
+        onContinuePending={continueToPendingExternalAction}
       />
 
       {!disableWelcomeModal && (
