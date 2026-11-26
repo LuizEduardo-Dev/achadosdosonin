@@ -7,6 +7,7 @@ export const size = {
 };
 
 export const contentType = "image/png";
+export const alt = `${SITE_CONFIG.name} - ${SITE_CONFIG.tagline}`;
 
 export default function OpenGraphImage() {
   return new ImageResponse(

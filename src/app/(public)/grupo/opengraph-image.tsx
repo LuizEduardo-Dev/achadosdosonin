@@ -7,6 +7,7 @@ export const size = {
 };
 
 export const contentType = "image/png";
+export const alt = `Grupo VIP no WhatsApp - ${SITE_CONFIG.name}`;
 
 export default function GrupoOpenGraphImage() {
   return new ImageResponse(
