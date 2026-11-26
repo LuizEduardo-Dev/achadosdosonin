@@ -63,6 +63,18 @@ export const UI_COPY = {
     dismissLabel: "Agora não",
     closeAriaLabel: "Fechar convite do grupo",
   },
+  grupo: {
+    badge: "Grupo VIP no WhatsApp",
+    benefits: [
+      "Achados selecionados todos os dias sem precisar procurar",
+      "Links diretos para as maiores lojas online",
+      "Sem spam — entre e saia do grupo quando quiser",
+    ],
+    ctaLabel: "Entrar no grupo",
+    backToSiteLabel: "Ver os achados no site",
+    unavailableNotice:
+      "O link do grupo está sendo atualizado no momento. Enquanto isso, confira as ofertas disponíveis na vitrine.",
+  },
   inAppBanner: {
     copyButton: "Copiar link do site",
     copiedButton: "Link copiado",

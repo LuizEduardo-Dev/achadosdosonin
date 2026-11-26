@@ -22,6 +22,8 @@ As migrations em `supabase/migrations/` criam toda a estrutura do zero (extensã
    1. `supabase/migrations/20261121000001_initial_schema.sql`
    2. `supabase/migrations/20261122000001_add_price_note.sql`
    3. `supabase/migrations/20261122000002_grant_table_privileges.sql`
+   4. `supabase/migrations/20261126000001_make_price_cents_nullable.sql`
+   5. `supabase/migrations/20261126000002_categories.sql`
 3. Confirme que todas retornaram **Success**.
 
 **Opção B — Via Supabase CLI (opcional):**
@@ -185,6 +187,8 @@ Aplique a segunda migration (`supabase/migrations/20261122000001_add_price_note.
 ---
 
 ## 5. Checklist de testes do link do grupo de WhatsApp
+
+> O link da bio passa a ser `{SITE_URL}/grupo`, e o link do grupo só se altera no admin (`/admin/configuracoes`).
 
 Teste sempre em **aparelhos reais** antes de divulgar um link na bio ou em vídeos:
 

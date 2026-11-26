@@ -13,20 +13,22 @@ Idioma da interface: **pt-BR**. Código, nomes de variáveis, commits e comentá
 ### 2.1 MVP (este escopo é o que deve ser construído agora)
 
 1. **Vitrine pública** com os achados publicados, com:
+   - **cabeçalho compacto** em `--ink`: botão de menu (hambúrguer à esquerda), logo, busca (`?q=`, 2ª linha no mobile) e botão **Grupo VIP** (sem bloco de hero);
+   - **menu lateral (drawer) de departamentos** e rotas compartilháveis `/c/[slug]` (apenas departamentos ativos com ao menos 1 achado publicado no drawer; slug inexistente/inativo retorna 404);
    - **busca por título** no cliente (ignora maiúsculas e acentos, sincronizada com `?q=`);
-   - filtro por **loja** (ex.: Shopee, Mercado Livre, Amazon; lista vem dos dados; esconder faixa se houver menos de 2 lojas);
-   - **ordenação**: novidades (padrão), menor preço, maior preço;
-   - contador de achados exibidos junto à ordenação ativa (`Novidades · N achados`);
-   - observação curta opcional de preço (`price_note`, até 40 caracteres, ex.: "à vista no PIX", "em até 10x sem juros");
+   - filtro por **loja** (ex.: Shopee, Mercado Livre, Amazon; lista vem dos dados, sincronizada com `?loja=`; esconder faixa se houver menos de 2 lojas);
+   - **ordenação fixa**: novidades (mais recente para a mais antiga), sem seletor nem ordenação por preço;
+   - contador de achados exibidos (`N achados` na home, `Departamento · N achados` em `/c/[slug]`);
    - aviso único no rodapé: "Preços e disponibilidade podem mudar. Links podem gerar comissão."
-2. **Área de admin** (`/admin`) para gerenciar achados e configurações.
-3. **Modal de boas-vindas** com **um único link** de grupo de WhatsApp.
-4. **Rotas por origem de tráfego** (`/tt`, `/ig`, `/wpp`) com aviso discreto para abrir no navegador quando o site é aberto dentro de um navegador embutido (ver 2.5).
-5. **PWA** instalável (ver 2.6).
+2. **Área de admin** (`/admin`) para gerenciar achados, departamentos e configurações.
+3. **Modal de boas-vindas** com **um único link** de grupo de WhatsApp (não aparece em `/admin` nem em `/grupo`).
+4. **Página ponte `/grupo`** com textos de `site_settings`, benefícios curtos em pt-BR, CTA verde do WhatsApp e botão secundário para `/` (sem cache longo de HTML).
+5. **Rotas por origem de tráfego** (`/tt`, `/ig`, `/wpp`) com aviso discreto para abrir no navegador quando o site é aberto dentro de um navegador embutido (ver 2.5).
+6. **PWA** instalável (ver 2.6).
 
 ### 2.2 Fora do MVP (v2, NÃO implementar agora)
 
-- Categorias de produto (ex.: Geral / Feminino) e múltiplos grupos de WhatsApp (um por categoria).
+- Múltiplos grupos de WhatsApp (um por categoria/departamento).
 - Formulário "Pedir um achado" (o visitante sugere um produto ao curador).
 - Botão "O link não abriu? Avisar o curador" (reportar link quebrado).
 - Contagem de cliques por achado e painel de métricas (se adicionado, avaliar LGPD/consentimento).
@@ -37,10 +39,11 @@ Ao projetar o modelo de dados e os componentes do MVP, **não bloquear** essas e
 
 ### 2.3 Área de admin (`/admin`)
 - Login protegido (apenas o dono; **sem cadastro público**: desativar signups no Supabase Auth).
-- CRUD de achados: criar, editar, excluir, arquivar, marcar como rascunho/publicado.
-- Upload de imagem do achado (ver seção 6 sobre upload direto ao Storage).
-- Campos de um achado: título, descrição curta (opcional), preço atual, preço original (opcional), loja, link de afiliado, imagem, status, data de criação, data de expiração (opcional).
-- Tela de configurações: link do grupo de WhatsApp, texto do modal, modal ativo/inativo.
+- CRUD de achados: criar, editar, excluir, arquivar, marcar como rascunho/publicado, associar até 3 departamentos e filtrar listagem por departamento/status.
+- CRUD de departamentos (`/admin/departamentos`): nome, slug automático editável, ordem e status ativo/inativo.
+- Upload de imagem do achado (ver seção 6 sobre upload direto ao Storage): conversão no cliente para canvas quadrado `800x800` em fundo branco (`#FFFFFF`, 4% de margem), WebP (fallback JPEG) visando até `150 KB`, rejeitando imagens com menor lado `< 400 px`.
+- Campos de um achado no formulário: título, descrição curta (opcional), loja, departamentos (até 3, opcional), link de afiliado, imagem, status, data de criação, data de expiração (opcional). Campos de preço não são expostos na UI nem no formulário.
+- Tela de configurações: link do grupo de WhatsApp (validado no formato `https://chat.whatsapp.com/<código>`, aceitando `/invite/<código>` e normalizando para a forma curta, sem espaços nem parâmetros extras), texto do modal, modal ativo/inativo.
 - Interface usável no celular (o dono provavelmente posta pelo telefone).
 - Rotas `/admin/*` com `noindex`, nunca cacheadas pelo service worker.
 
@@ -93,10 +96,11 @@ Comportamento "soft" (Instagram, Facebook, Messenger)
 
 Regras gerais
 - Nunca bloquear o conteúdo: sempre permitir continuar no navegador embutido.
+- **Botões do WhatsApp (`/grupo`, topo e modal):** dentro de navegador embutido (`strong` ou `soft`), o clique **não** navega direto para `chat.whatsapp.com`; ele abre o painel de saída do navegador embutido (reaproveitando o item 2.5). Só segue para `chat.whatsapp.com` (na mesma aba, sem `target="_blank"`) se a pessoa clicar em `"Continuar aqui mesmo assim"`.
 - O redirecionamento automático só leva à mesma URL, nunca a outra página.
 - O modal de boas-vindas só aparece depois que o painel/faixa for dispensado
   ou se não houver navegador embutido (nunca dois overlays juntos).
-- Canonical e og:url sempre apontam para "/".
+- Canonical e og:url da home e `/tt`, `/ig`, `/wpp` sempre apontam para "/"; `/c/[slug]` e `/grupo` têm canonical próprios.
 - Em desenvolvimento/preview (nunca em produção), permitir simular com
   ?debugInApp=tiktok|instagram|facebook, para testar sem o app real.
 - Limitação conhecida: não há saída programática confiável no iOS, e os apps
@@ -168,7 +172,8 @@ Visual limpo, profissional e de varejo (inspirado em e-commerces brasileiros com
 - **Letter-spacing**: normal (`0`) em textos de leitura; no máximo `-0.01em` em títulos grandes. Preços com `font-variant-numeric: tabular-nums`.
 - **Raios de borda**: `8px` em cards, inputs e botões; `999px` apenas em chips; `12px` no modal; `16px` nos cantos inferiores da faixa do topo.
 - **Botões**: primário sólido `--ink` (com parcimônia); secundário com contorno `1px --ink` (fundo transparente, hover `--surface-2`); WhatsApp sólido `#25D366` com texto `#04361A`; destrutivo com contorno `--danger` e sólido `--danger` somente na confirmação.
-- **Card de achado**: o card inteiro é um único `<a>` para o link de afiliado; apenas a borda externa `1px --border` (sem linha divisória abaixo da imagem nem contêineres aninhados com borda); imagem quadrada `1/1` com fundo branco e `object-fit: contain` + padding `8px`; linha de `price_note` com altura reservada para alinhamento; botão visual "Ver oferta" (`<span>`) com contorno `1px --ink`, fundo transparente e texto `--ink` (altura mínima `40px`, largura total), preenchendo com fundo `--ink` e texto branco no hover e focus-visible.
+- **Card de achado**: o card inteiro é um único `<a>` para o link de afiliado (`aria-label="Comprar {título} na {loja}"`); apenas a borda externa `1px --border` (sem linha divisória abaixo da imagem nem contêineres aninhados com borda); **sem preço atual, preço original, observação de preço nem selo de desconto** na UI; imagem quadrada `1/1` (`aspect-ratio: 1 / 1`) com fundo branco, `object-fit: contain` e padding `8px`; pílula da loja no canto superior esquerdo sobre a imagem (fundo `--surface`, borda `1px --border`, texto `--text`, `11-12px`, `rounded-full`); título alinhado com no máximo 2 linhas; botão visual `"Comprar"` (`<span>`) com contorno `1px --ink`, fundo transparente e texto `--ink` (altura mínima `40px`, largura total), preenchendo com fundo `--ink` e texto branco no hover e focus-visible.
+- **Cabeçalho e hierarquia (`<h1>`)**: faixa única escura compacta em `--ink` sem hero (`menu hambúrguer + logo + busca + Grupo VIP`). Um único `<h1>` por página (`sr-only` `"Achados"` na home/origens; título visível do departamento em `/c/[slug]`; título de boas-vindas em `/grupo`).
 - **Grade**: 2 colunas (`<640px`), 3 (`>=640px`), 4 (`>=1024px`), 5 (`>=1280px`), container `max-width: 1280px` com padding lateral `12px` (mobile) / `20px`.
 - **Contraste mínimo WCAG AA** (`4.5:1` para texto normal). Nada de cores hardcoded em componentes: usar apenas os tokens.
 - `theme_color` do manifest = `#180828` (`--ink`); `background_color` = `#F5F4EE` (`--bg`).
@@ -187,18 +192,19 @@ Tabelas mínimas no Postgres (Supabase). Toda alteração de schema deve vir com
 
 **`achados`**
 - `id` uuid (PK), `title` text, `description` text null
-- `price_cents` integer, `original_price_cents` integer null
-- `price_note` text null (observação curta de preço, até 40 caracteres, ex.: "à vista no PIX")
+- `price_cents` integer null, `original_price_cents` integer null, `price_note` text null (colunas mantidas opcionais no banco sem exposição na UI)
 - `store` text (nome da loja, ex.: "Shopee"), `affiliate_url` text
 - `image_path` text (caminho no Storage)
 - `status` text: `draft` | `published` | `archived`
 - `created_at`, `updated_at`, `expires_at` null
 
+**`categories`** e **`achado_categories`**
+- `categories`: `id` uuid (PK), `name` text, `slug` text unique, `sort_order` integer, `is_active` boolean, `created_at`, `updated_at`
+- `achado_categories`: `achado_id` uuid (FK), `category_id` uuid (FK), PK `(achado_id, category_id)` com trigger limitando a no máximo 3 departamentos por achado.
+
 **`site_settings`** (linha única)
 - `whatsapp_group_url` text, `modal_enabled` boolean
 - `modal_title` text, `modal_message` text
-
-Dinheiro: guardar em **centavos** (inteiro) e formatar com `Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })`.
 
 ## 6. Segurança
 
@@ -236,11 +242,16 @@ src/
     (public)/
       page.tsx                  # vitrine de achados
       [source]/page.tsx         # /tt, /ig, /wpp (whitelist; senão 404)
+      c/[slug]/page.tsx         # vitrine filtrada por departamento
+      grupo/
+        page.tsx                # página ponte para o grupo do WhatsApp
+        opengraph-image.tsx
       offline/page.tsx
     admin/
       login/page.tsx
       page.tsx                  # dashboard
       achados/                  # listagem, novo, [id]/editar
+      departamentos/page.tsx    # CRUD de departamentos
       configuracoes/page.tsx    # modal e link do WhatsApp
     manifest.ts
     layout.tsx
@@ -248,13 +259,16 @@ src/
     ui/                         # botões, inputs, etc.
     welcome-modal.tsx
     in-app-browser-banner.tsx
+    departments-drawer.tsx
+    whatsapp-link.tsx
     achado-card.tsx
     store-filter.tsx
-    sort-select.tsx
   lib/
     supabase/                   # clients (server e browser)
     validators/                 # schemas Zod
     detect-in-app-browser.ts
+    in-app-overlay-store.ts
+    slug.ts
     config.ts
   types/
 supabase/
@@ -291,11 +305,11 @@ Antes de finalizar qualquer tarefa: rodar `npm run lint` e `npm run build` e gar
 - [ ] Funciona e é legível em `360px`, `768px`, `1024px` e `1280px`
 - [ ] Contraste WCAG AA (`4.5:1`) em todos os pares de cores usados
 - [ ] Sem glow, sombras coloridas, gradientes, neon ou cores hardcoded nos componentes
-- [ ] Card de achado como link único (`<a>`), imagem `1/1` em fundo branco (`object-contain`), `price_note` opcional alinhado
+- [ ] Card de achado como link único (`<a>`), sem preço/selo de desconto, imagem `1/1` em fundo branco (`object-contain`), pílula da loja top-left, CTA `"Comprar"`
 - [ ] Rotas admin protegidas no servidor e RLS ativo nas tabelas e migrations
-- [ ] Modal respeita frequência e acessibilidade, não aparece no admin e não sobrepõe o aviso de navegador embutido
-- [ ] `/tt`, `/ig`, `/wpp` funcionam; outros segmentos retornam 404
-- [ ] Busca por título (`?q=`, sem acento/maiúsculas), filtro por loja e ordenação funcionando
+- [ ] Modal respeita frequência e acessibilidade, não aparece em `/admin` nem `/grupo` e não sobrepõe o aviso de navegador embutido
+- [ ] `/tt`, `/ig`, `/wpp`, `/c/[slug]` e `/grupo` funcionam; outros segmentos e slugs inexistentes retornam 404
+- [ ] Busca por título (`?q=`, sem acento/maiúsculas), filtro por loja (`?loja=`) e menu de departamentos funcionando
 - [ ] Lighthouse: PWA instalável, Acessibilidade ≥ 90
 - [ ] `lint` e `build` sem erros
 - [ ] `.env.example` atualizado se houve nova variável
