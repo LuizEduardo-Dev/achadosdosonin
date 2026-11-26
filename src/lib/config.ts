@@ -30,12 +30,12 @@ export const UI_COPY = {
   header: {
     menuOpenAriaLabel: "Abrir menu de departamentos",
     menuCloseAriaLabel: "Fechar menu de departamentos",
-    allDealsLabel: "Todos os achados",
+    allDealsLabel: "Todos os produtos",
     departmentsHeading: "Departamentos",
     whatsappCta: "Grupo VIP",
     whatsappAriaLabel: "Entrar no grupo de ofertas no WhatsApp",
-    searchPlaceholder: "Buscar achados por nome...",
-    searchAriaLabel: "Buscar achados por título",
+    searchPlaceholder: "Buscar produtos...",
+    searchAriaLabel: "Buscar produtos por título",
     clearSearchAriaLabel: "Limpar busca",
   },
   filters: {
