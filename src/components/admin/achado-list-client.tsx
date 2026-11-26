@@ -19,7 +19,7 @@ import {
   deleteAchadoAction,
   updateAchadoStatusAction,
 } from "@/app/admin/actions";
-import { formatCurrencyBRL, formatDatePtBR } from "@/lib/format";
+import { formatDatePtBR } from "@/lib/format";
 import { resolveAchadoImageUrl } from "@/lib/supabase/storage";
 import { Button, buttonClasses } from "@/components/ui/button";
 
@@ -256,23 +256,6 @@ export function AchadoListClient({ achados }: AchadoListClientProps) {
                     <h2 className="line-clamp-2 text-sm font-medium text-text sm:text-base">
                       {item.title}
                     </h2>
-
-                    <div className="flex flex-wrap items-baseline gap-2">
-                      <span className="text-base font-semibold tabular-nums text-price">
-                        {formatCurrencyBRL(item.price_cents)}
-                      </span>
-                      {item.original_price_cents &&
-                        item.original_price_cents > item.price_cents && (
-                          <span className="text-xs tabular-nums text-text-muted line-through">
-                            {formatCurrencyBRL(item.original_price_cents)}
-                          </span>
-                        )}
-                      {item.price_note && (
-                        <span className="text-xs text-text-muted">
-                          ({item.price_note})
-                        </span>
-                      )}
-                    </div>
                   </div>
                 </div>
 

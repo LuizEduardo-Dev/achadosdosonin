@@ -1,4 +1,4 @@
-import type { SortOption, TrafficSource } from "@/types/achado";
+import type { TrafficSource } from "@/types/achado";
 import { getClientEnv } from "@/lib/env";
 
 export const TRAFFIC_SOURCES = ["tt", "ig", "wpp"] as const satisfies readonly TrafficSource[];
@@ -21,12 +21,6 @@ export const SITE_CONFIG = {
   },
 } as const;
 
-export const SORT_OPTIONS: ReadonlyArray<{ value: SortOption; label: string }> = [
-  { value: "newest", label: "Novidades" },
-  { value: "price_asc", label: "Menor preço" },
-  { value: "price_desc", label: "Maior preço" },
-];
-
 export const UI_COPY = {
   header: {
     whatsappCta: "Grupo VIP",
@@ -44,7 +38,6 @@ export const UI_COPY = {
   filters: {
     allStores: "Todas",
     storeFilterLabel: "Filtrar por loja",
-    sortLabel: "Ordenar por",
     clearFilters: "Limpar filtros",
     emptyTitle: "Nenhum achado encontrado",
     emptyFilteredDescription:
@@ -53,9 +46,7 @@ export const UI_COPY = {
       "Ainda não há ofertas publicadas por aqui. Volte em breve.",
   },
   card: {
-    cta: "Ver oferta",
-    ctaAriaSuffix: "(abre em nova aba)",
-    discountSuffix: "OFF",
+    cta: "Comprar",
   },
   footer: {
     disclaimer:

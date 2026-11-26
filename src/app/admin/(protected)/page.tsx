@@ -10,7 +10,7 @@ import {
   Settings,
 } from "lucide-react";
 import { getAdminAchados } from "@/lib/data/admin";
-import { formatCurrencyBRL, formatDatePtBR } from "@/lib/format";
+import { formatDatePtBR } from "@/lib/format";
 import { buttonClasses } from "@/components/ui/button";
 
 async function DashboardContent() {
@@ -167,9 +167,6 @@ async function DashboardContent() {
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
-                  <span className="text-sm font-semibold tabular-nums text-price">
-                    {formatCurrencyBRL(item.price_cents)}
-                  </span>
                   <Link
                     href={`/admin/achados/${item.id}/editar`}
                     className={buttonClasses("secondary", "sm")}

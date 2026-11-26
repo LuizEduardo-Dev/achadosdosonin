@@ -1,14 +1,12 @@
 import { z } from "zod";
 
-export const sortOptionSchema = z.enum(["newest", "price_asc", "price_desc"]);
-
 export const achadoStatusSchema = z.enum(["draft", "published", "archived"]);
 
 export const achadoSchema = z.object({
   id: z.string().uuid(),
   title: z.string().trim().min(3).max(160),
   description: z.string().trim().max(320).nullable(),
-  price_cents: z.number().int().nonnegative(),
+  price_cents: z.number().int().nonnegative().nullable(),
   original_price_cents: z.number().int().positive().nullable(),
   price_note: z.string().trim().max(40).nullable(),
   store: z.string().trim().min(1).max(60),

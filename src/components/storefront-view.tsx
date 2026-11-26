@@ -4,16 +4,10 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { MessageCircle, Search, Tag, X } from "lucide-react";
-import type {
-  Achado,
-  SiteSettings,
-  SortOption,
-  TrafficSource,
-} from "@/types/achado";
-import { SITE_CONFIG, SORT_OPTIONS, UI_COPY } from "@/lib/config";
+import type { Achado, SiteSettings, TrafficSource } from "@/types/achado";
+import { SITE_CONFIG, UI_COPY } from "@/lib/config";
 import { AchadoCard } from "@/components/achado-card";
 import { StoreFilter } from "@/components/store-filter";
-import { SortSelect } from "@/components/sort-select";
 import { StorefrontOverlays } from "@/components/storefront-overlays";
 import { Button, buttonClasses } from "@/components/ui/button";
 
@@ -39,7 +33,6 @@ export function StorefrontView({
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
   const [selectedStore, setSelectedStore] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<SortOption>("newest");
 
   const whatsappUrl = settings.whatsapp_group_url.trim();
 
@@ -86,24 +79,12 @@ export function StorefrontView({
       return true;
     });
 
-    return [...filtered].sort((a, b) => {
-      switch (sortBy) {
-        case "price_asc":
-          return a.price_cents - b.price_cents;
-        case "price_desc":
-          return b.price_cents - a.price_cents;
-        case "newest":
-        default:
-          return (
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          );
-      }
-    });
-  }, [achados, selectedStore, normalizedQuery, sortBy]);
+    return [...filtered].sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+  }, [achados, selectedStore, normalizedQuery]);
 
-  const activeSortLabel =
-    SORT_OPTIONS.find((option) => option.value === sortBy)?.label ??
-    "Novidades";
   const hasActiveFilter = Boolean(selectedStore || normalizedQuery);
   const count = filteredAndSortedAchados.length;
   const countLabel = `${count} ${count === 1 ? "achado" : "achados"}`;
@@ -204,19 +185,11 @@ export function StorefrontView({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p
             aria-live="polite"
-            className="text-sm font-medium text-text"
+            className="text-sm font-medium text-text-muted"
           >
-            <span>{activeSortLabel}</span>
-            <span className="mx-1.5 text-text-muted" aria-hidden="true">
-              ·
-            </span>
-            <span className="text-text-muted">{countLabel}</span>
-            {selectedStore && (
-              <span className="text-text-muted"> em {selectedStore}</span>
-            )}
+            <span>{countLabel}</span>
+            {selectedStore && <span> em {selectedStore}</span>}
           </p>
-
-          <SortSelect value={sortBy} onChange={setSortBy} />
         </div>
 
         {filteredAndSortedAchados.length > 0 ? (

@@ -14,7 +14,6 @@ import {
   achadoMutationSchema,
   deleteAchadoSchema,
   loginSchema,
-  parseBRLInputToCents,
   siteSettingsMutationSchema,
   updateAchadoStatusSchema,
 } from "@/lib/validators/admin";
@@ -37,16 +36,8 @@ function revalidateStorefrontAndAdmin() {
 }
 
 function parseAchadoFormData(formData: FormData) {
-  const priceRaw = String(formData.get("price") ?? "");
-  const originalPriceRaw = String(formData.get("original_price") ?? "");
-  const priceNoteRaw = String(formData.get("price_note") ?? "").trim();
   const descriptionRaw = String(formData.get("description") ?? "").trim();
   const expiresAtRaw = String(formData.get("expires_at") ?? "").trim();
-
-  const priceCents = parseBRLInputToCents(priceRaw);
-  const originalPriceCents = originalPriceRaw.trim()
-    ? parseBRLInputToCents(originalPriceRaw)
-    : null;
 
   let expiresAtIso: string | null = null;
   if (expiresAtRaw) {
@@ -62,12 +53,6 @@ function parseAchadoFormData(formData: FormData) {
   return achadoMutationSchema.safeParse({
     title: String(formData.get("title") ?? ""),
     description: descriptionRaw || null,
-    price_cents: priceCents ?? -1,
-    original_price_cents:
-      originalPriceRaw.trim() && originalPriceCents === null
-        ? -1
-        : originalPriceCents,
-    price_note: priceNoteRaw || null,
     store: String(formData.get("store") ?? ""),
     affiliate_url: String(formData.get("affiliate_url") ?? ""),
     image_path: String(formData.get("image_path") ?? ""),

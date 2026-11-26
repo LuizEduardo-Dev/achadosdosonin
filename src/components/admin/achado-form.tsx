@@ -9,7 +9,6 @@ import {
   updateAchadoAction,
   type ActionState,
 } from "@/app/admin/actions";
-import { formatCentsForInput } from "@/lib/validators/admin";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
@@ -34,11 +33,6 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
   const [imagePath, setImagePath] = useState(achado?.image_path ?? "");
   const [title, setTitle] = useState(achado?.title ?? "");
   const [description, setDescription] = useState(achado?.description ?? "");
-  const [price, setPrice] = useState(formatCentsForInput(achado?.price_cents));
-  const [originalPrice, setOriginalPrice] = useState(
-    formatCentsForInput(achado?.original_price_cents),
-  );
-  const [priceNote, setPriceNote] = useState(achado?.price_note ?? "");
   const [store, setStore] = useState(achado?.store ?? "");
   const [status, setStatus] = useState<AchadoStatus>(
     achado?.status ?? "published",
@@ -129,81 +123,6 @@ export function AchadoForm({ achado, storeSuggestions }: AchadoFormProps) {
         />
         {fieldErrors?.description && (
           <p className="text-xs text-danger">{fieldErrors.description}</p>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <label
-            htmlFor="achado-price"
-            className="block text-sm font-medium text-text"
-          >
-            Preço atual (R$) *
-          </label>
-          <Input
-            id="achado-price"
-            name="price"
-            inputMode="decimal"
-            required
-            value={price}
-            onChange={(event) => setPrice(event.target.value)}
-            aria-invalid={Boolean(fieldErrors?.price_cents)}
-            className={fieldErrors?.price_cents ? "border-danger" : ""}
-            placeholder="129,90"
-          />
-          {fieldErrors?.price_cents && (
-            <p className="text-xs text-danger">{fieldErrors.price_cents}</p>
-          )}
-        </div>
-
-        <div className="space-y-1.5">
-          <label
-            htmlFor="achado-original-price"
-            className="block text-sm font-medium text-text"
-          >
-            Preço original (R$){" "}
-            <span className="font-normal text-text-muted">(opcional)</span>
-          </label>
-          <Input
-            id="achado-original-price"
-            name="original_price"
-            inputMode="decimal"
-            value={originalPrice}
-            onChange={(event) => setOriginalPrice(event.target.value)}
-            aria-invalid={Boolean(fieldErrors?.original_price_cents)}
-            className={fieldErrors?.original_price_cents ? "border-danger" : ""}
-            placeholder="249,90"
-          />
-          {fieldErrors?.original_price_cents && (
-            <p className="text-xs text-danger">
-              {fieldErrors.original_price_cents}
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="space-y-1.5">
-        <label
-          htmlFor="achado-price-note"
-          className="block text-sm font-medium text-text"
-        >
-          Observação do preço{" "}
-          <span className="font-normal text-text-muted">
-            (opcional, até 40 caracteres)
-          </span>
-        </label>
-        <Input
-          id="achado-price-note"
-          name="price_note"
-          maxLength={40}
-          value={priceNote}
-          onChange={(event) => setPriceNote(event.target.value)}
-          aria-invalid={Boolean(fieldErrors?.price_note)}
-          className={fieldErrors?.price_note ? "border-danger" : ""}
-          placeholder="Ex.: à vista no PIX ou em até 10x sem juros"
-        />
-        {fieldErrors?.price_note && (
-          <p className="text-xs text-danger">{fieldErrors.price_note}</p>
         )}
       </div>
 

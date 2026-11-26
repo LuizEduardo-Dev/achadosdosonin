@@ -4,7 +4,7 @@ export interface Achado {
   id: string;
   title: string;
   description: string | null;
-  price_cents: number;
+  price_cents: number | null;
   original_price_cents: number | null;
   price_note: string | null;
   store: string;
@@ -24,5 +24,3 @@ export interface SiteSettings {
 }
 
 export type TrafficSource = "tt" | "ig" | "wpp";
-
-export type SortOption = "newest" | "price_asc" | "price_desc";

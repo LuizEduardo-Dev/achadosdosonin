@@ -38,7 +38,7 @@ export default function EditAchadoPage({ params }: EditAchadoPageProps) {
             Editar achado
           </h1>
           <p className="text-sm text-text-muted">
-            Atualize preço, observação, status ou imagem desta oferta.
+            Atualize título, loja, status ou imagem desta oferta.
           </p>
         </div>
 
