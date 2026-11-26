@@ -1,5 +1,5 @@
-const STATIC_CACHE = "sonin-links-static-v4";
-const PAGES_CACHE = "sonin-links-pages-v4";
+const STATIC_CACHE = "sonin-links-static-v5";
+const PAGES_CACHE = "sonin-links-pages-v5";
 const ALLOWED_CACHES = [STATIC_CACHE, PAGES_CACHE];
 
 const OFFLINE_URL = "/offline";
