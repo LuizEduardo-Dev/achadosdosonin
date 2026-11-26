@@ -111,13 +111,23 @@ export function detectInAppBrowser(
 }
 
 /**
- * Builds an Android intent URL preserving the exact current URL (origin, path, query/UTM) without hash.
- * Never navigates to another page.
+ * Builds an Android Intent URI preserving host, path, and query/UTM without hash.
+ * Uses standard Chrome/App-Links syntax with S.browser_fallback_url for older/custom webviews.
  */
-export function buildAndroidIntentUrl(currentHref: string): string {
-  const url = new URL(currentHref);
-  const fullUrlWithoutHash = `${url.origin}${url.pathname}${url.search}`;
-  return `intent:${fullUrlWithoutHash}#Intent;end`;
+export function buildAndroidIntentUrl(
+  targetHref: string,
+  options: { preferChrome?: boolean } = {},
+): string {
+  const url = new URL(targetHref);
+  const scheme = url.protocol.replace(":", "");
+  const hostAndPath = `${url.host}${url.pathname}${url.search}`;
+  const cleanHref = `${url.origin}${url.pathname}${url.search}`;
+  const fallback = encodeURIComponent(cleanHref);
+  const packageSegment = options.preferChrome
+    ? "package=com.android.chrome;"
+    : "";
+
+  return `intent://${hostAndPath}#Intent;scheme=${scheme};action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;${packageSegment}S.browser_fallback_url=${fallback};end`;
 }
 
 export interface InAppCopy {
