@@ -88,13 +88,13 @@ export function ImageUploadField({
       <div className="rounded-lg border border-border bg-surface-2/60 p-4">
         {previewUrl ? (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg border border-border bg-surface p-1.5">
+            <div className="relative aspect-square w-36 max-w-full shrink-0 overflow-hidden rounded-lg border border-border bg-surface p-2">
               <div className="relative h-full w-full">
                 <Image
                   src={previewUrl}
                   alt="Pré-visualização do achado"
                   fill
-                  sizes="96px"
+                  sizes="144px"
                   className="object-contain"
                 />
               </div>
@@ -155,6 +155,11 @@ export function ImageUploadField({
           aria-label="Selecionar imagem do achado"
         />
       </div>
+
+      <p className="text-xs text-text-muted">
+        Use fotos quadradas (1:1), mínimo 800x800, produto centralizado e fundo
+        branco.
+      </p>
 
       {(uploadError || error) && (
         <p role="alert" className="text-xs font-medium text-danger">
